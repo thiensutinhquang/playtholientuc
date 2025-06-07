@@ -435,7 +435,7 @@
       box-shadow: 0 1px 3px rgba(0,123,255,0.3); /* Softer shadow on press */
     }
 
-    /* Specific style for auto-play (loop) button */
+    /* Specific style for auto-play (loop) button when active */
     .speech-controls button.active-auto {
       background: #28a745; /* Green for active autoplay */
       box-shadow: 0 4px 12px rgba(40,167,69,0.25);
@@ -448,6 +448,20 @@
         background: #1e7e34; /* Even darker green on press for active loop */
         transform: translateY(0.5px) scale(0.98); /* Consistent press effect */
         box-shadow: 0 1px 3px rgba(40,167,69,0.3); /* Softer shadow on press */
+    }
+
+    /* New style for the loop button when it is NOT active (i.e., default for loop button) */
+    .speech-controls button.loop-toggle-button:not(.active-auto) {
+        background: #6c757d; /* A neutral gray, distinct from blue and green */
+        color: #fff;
+    }
+    .speech-controls button.loop-toggle-button:not(.active-auto):hover {
+        background: #5a6268; /* Darker gray on hover */
+    }
+    .speech-controls button.loop-toggle-button:not(.active-auto):active {
+        background: #495057; /* Even darker gray on press */
+        transform: translateY(0.5px) scale(0.98);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
 
@@ -1165,7 +1179,8 @@
         };
 
         const btnAuto = document.createElement("button");
-        btnAuto.textContent = "🔁 Lặp"; /* Changed to include the icon */
+        btnAuto.innerHTML = "🔁 Lặp"; /* Changed to include the icon */
+        btnAuto.classList.add("loop-toggle-button"); // Add new class for specific styling
         btnAuto.onclick = () => {
           autoPlay = !autoPlay; // Toggle global autoPlay
           btnAuto.classList.toggle("active-auto", autoPlay); // Update button visual
