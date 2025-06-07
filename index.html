@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📜 Danh sách các bài thơ</title>
+  <!-- Link Google Fonts for Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Global Reset/Box-sizing for consistent layout */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* General body styles */
+    body {
+      font-family: 'Inter', sans-serif; /* Use Inter font as primary */
+      background: #f8f9fa; /* Lighter background for a cleaner look */
+      margin: 0;
+      padding: 1rem; /* Use rem for better scalability */
+      line-height: 1.6;
+      color: #343a40; /* Darker text for better contrast */
+      text-rendering: optimizeLegibility; /* Improve font rendering */
+      -webkit-font-smoothing: antialiased; /* Smooth fonts on Webkit browsers */
+      -moz-osx-font-smoothing: grayscale; /* Smooth fonts on Firefox */
+      padding-bottom: 80px; /* Add padding to prevent fixed player from overlapping content */
+    }
+
+    /* Main container styling */
+    .container {
+      max-width: 960px; /* Slightly wider for more content */
+      margin: 1.5rem auto; /* More vertical margin */
+      background: #ffffff;
+      border-radius: 12px; /* More rounded corners */
+      padding: 1.5rem; /* More internal padding */
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1); /* Deeper shadow */
+      overflow: hidden; /* Ensures no content spills out */
+      transition: all 0.3s ease-in-out; /* Smooth transitions for any size changes */
+    }
+
+    /* Main heading styling */
+    h1 {
+      text-align: center;
+      font-size: 2.2rem; /* Larger font size */
+      color: #007bff;
+      margin-bottom: 1rem; /* Reduced space below heading */
+      font-weight: 700; /* Bolder font */
+      letter-spacing: -0.5px; /* Slight letter spacing adjustment */
+    }
+
+    /* Search wrapper for positioning input and suggestions */
+    #search-wrapper {
+        position: relative; /* Establish positioning context for suggestions */
+        margin-top: 0.5rem; /* Space between h1 and search input */
+        margin-bottom: 0.5rem; /* Adjusted for result count */
+    }
+
+    /* Search input field */
+    #search {
+      width: 100%;
+      padding: 0.8rem 1rem; /* Adjusted padding */
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ced4da; /* Lighter border color */
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.08); /* Subtle inner shadow */
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.2s ease;
+    }
+    #search::placeholder {
+      color: #6c757d; /* Placeholder color */
+    }
+    #search:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25); /* Focus ring effect */
+      outline: none;
+    }
+
+    /* Search suggestions container */
+    #search-suggestions {
+        position: absolute;
+        top: 100%; /* Position directly below the input in its wrapper */
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 0 0 8px 8px; /* Rounded corners only at the bottom */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        z-index: 10; /* Ensure it's above other content */
+        max-height: 120px; /* Reduced max-height for compactness */
+        overflow-y: auto;
+        display: none; /* Hidden by default */
+        list-style: none; /* Remove list bullets */
+        padding: 0;
+        margin: 0;
+    }
+    /* Individual suggestion item */
+    #search-suggestions li {
+        padding: 0.5rem 0.8rem; /* Reduced padding for compactness */
+        font-size: 0.9rem; /* Reduced font size for compactness */
+        color: #343a40;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    #search-suggestions li:hover {
+        background-color: #f1f1f1;
+    }
+    #search-suggestions li:not(:last-child) {
+        border-bottom: 1px solid #eee; /* Separator between items */
+    }
+
+    /* Styles when suggestions are open to make input and suggestions visually connect */
+    #search-wrapper.suggestions-open #search {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-color: transparent; /* Make border invisible */
+    }
+    #search-wrapper.suggestions-open #search-suggestions {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-top: none; /* Remove top border */
+    }
+
+    /* Additional styles for search-results-info */
+    #search-results-info {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #555;
+      text-align: center;
+      padding: 0.3rem 0;
+      display: none; /* Hidden by default */
+    }
+
+    /* For displaying search results count */
+    #search-result-count {  
+      margin: 0 0 1rem; /* Adjust margin as per instruction */
+      color: #555;  
+      font-weight: 500;
+      text-align: center;
+    }
+
+
+    /* Table of Contents (TOC) layout */
+    .toc {  
+      display: flex;
+      overflow-x: auto; /* Enable horizontal scrolling */
+      gap: 0.75rem; /* Consistent gap */
+      padding-bottom: 0.5rem; /* Padding for scrollbar visibility */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      /* Custom scrollbar styles for Firefox */
+      scrollbar-width: thin;
+      scrollbar-color: #007bff #e9ecef;
+    }
+    /* Custom scrollbar styles for Webkit (Chrome, Safari) */
+    .toc::-webkit-scrollbar {
+      height: 7px; /* Thinner scrollbar */
+    }
+    .toc::-webkit-scrollbar-track {
+      background: #e9ecef; /* Lighter track */
+      border-radius: 10px;
+    }
+    .toc::-webkit-scrollbar-thumb {
+      background: #007bff; /* Vibrant thumb */
+      border-radius: 10px;
+      transition: background 0.3s ease;
+    }
+    .toc::-webkit-scrollbar-thumb:hover {
+      background: #0056b3;
+    }
+
+    .toc a {
+      flex-shrink: 0; /* Prevents items from shrinking */
+      background: #e9ecef;
+      padding: 0.5rem 1rem; /* Adjusted padding */
+      border-radius: 25px; /* Fully rounded pills */
+      text-decoration: none;
+      color: #495057;
+      font-size: 0.95rem;
+      white-space: nowrap; /* Keep text on single line */
+      transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06); /* Subtle shadow */
+    }
+    .toc a:hover {
+      background: #d0e7ff; /* Lighter blue on hover */
+      color: #0056b3;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transform: translateY(-1px); /* Slight lift on hover */
+    }
+    .toc a.active {
+      background: #007bff;
+      color: #fff;
+      font-weight: 600; /* Bolder for active state */
+      box-shadow: 0 5px 15px rgba(0,123,255,0.35); /* More prominent shadow for active */
+      transform: translateY(-2px); /* More lift for active state */
+    }
+
+    /* Details (Accordion Item) styling */
+    details {
+      margin: 1rem 0; /* Consistent margin */
+      border: 1px solid #e0e0e0;
+      border-radius: 10px; /* Slightly more rounded */
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Improved shadow */
+      transition: box-shadow 0.3s ease, transform 0.2s ease;
+    }
+    details:hover {
+        transform: translateY(-2px); /* Slight lift on hover */
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+    details[open] {
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15); /* More prominent shadow when open */
+      transform: translateY(-2px); /* Keep lifted when open */
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 1rem 1.25rem 1rem 2.5rem; /* Increased left padding for icon space */
+      background: #f1f3f5; /* Lighter background for summary */
+      font-weight: 600; /* Bolder text */
+      color: #212529;
+      list-style: none; /* Remove default marker */
+      position: relative;
+      transition: background 0.3s ease;
+      font-size: 1.1rem; /* Slightly larger summary text */
+    }
+    summary:hover {
+      background: #e9ecef; /* Subtle hover effect */
+    }
+    summary::-webkit-details-marker {
+      display: none; /* Hide Webkit marker */
+    }
+    summary::before {
+      content: '►'; /* Custom arrow icon */
+      position: absolute;
+      left: 1rem; /* Keep icon at 1rem from left edge */
+      top: 50%;
+      transform: translateY(-50%) rotate(0deg);
+      transition: transform 0.2s ease;
+      font-size: 0.75rem; /* Smaller arrow */
+      color: #007bff;
+    }
+    details[open] summary::before {
+      transform: translateY(-50%) rotate(90deg); /* Rotate arrow when open */
+    }
+
+    /* Highlighting for search results */
+    mark.highlight { /* Changed from .highlight to mark.highlight for more specific styling */
+      background-color: #ffee00; /* Bright yellow highlight */
+      font-weight: bold;
+      padding: 0 2px; /* Small padding for visual separation */
+      border-radius: 3px;
+    }
+
+    .content-body {
+      padding: 1.25rem; /* Consistent padding */
+      background: #ffffff;
+      border-top: 1px solid #e9ecef; /* Lighter border */
+      font-size: 1rem;
+      color: #495057;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Fixed Player Bar */
+    .fixed-player-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #ffffff;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+        padding: 10px 1rem; /* Padding for the bar itself */
+        z-index: 1000; /* Ensure it stays on top */
+        display: flex; /* Use flexbox for internal arrangement */
+        align-items: center;
+        justify-content: center; /* Center the controls if there's extra space */
+    }
+
+    /* Speech controls styling - INSIDE FIXED BAR */
+    .speech-controls {
+      display: flex;
+      flex-wrap: nowrap; /* Forces content on one line */
+      gap: 0.75rem; /* Gap between direct children */
+      align-items: center;
+      max-width: 900px; /* Limit width of controls for desktop */
+      width: 100%; /* Take full width of parent (fixed-player-bar) */
+      overflow-x: auto; /* Allow horizontal scrolling if too wide */
+      padding-bottom: 5px; /* Space for scrollbar on some browsers */
+      /* Remove margin-top, padding-top, border-top as they are now on fixed-player-bar */
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+
+      /* Custom scrollbar for controls if overflow-x is active */
+      scrollbar-width: thin;
+      scrollbar-color: #007bff #e9ecef;
+    }
+    .speech-controls::-webkit-scrollbar {
+      height: 5px;
+    }
+    .speech-controls::-webkit-scrollbar-track {
+      background: #e9ecef;
+      border-radius: 10px;
+    }
+    .speech-controls::-webkit-scrollbar-thumb {
+      background: #007bff;
+      border-radius: 10px;
+    }
+
+    /* Ensure buttons and labels don't shrink by default */
+    .speech-controls button {
+      flex-shrink: 0; /* Prevent buttons from shrinking too much */
+      min-width: 90px; /* A reasonable minimum width for buttons */
+      padding: 0.6rem 1.2rem; /* Adjusted padding for better touch target */
+      font-size: 0.95rem;
+      border-radius: 25px; /* Fully rounded buttons */
+      border: none;
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,123,255,0.25);
+    }
+    .speech-controls button:hover {
+      background: #0056b3;
+      transform: translateY(-3px); /* More pronounced lift */
+      box-shadow: 0 6px 15px rgba(0,123,255,0.35);
+    }
+    .speech-controls button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0,123,255,0.2);
+    }
+    .speech-controls button.active-auto {
+      background: #28a745; /* Green for active autoplay */
+      box-shadow: 0 4px 12px rgba(40,167,69,0.25);
+    }
+    .speech-controls button.active-auto:hover {
+      background: #218838;
+    }
+
+
+    .speech-controls label {
+      display: flex;
+      align-items: center;
+      gap: 0.2em; /* Small gap between emoji and slider */
+      flex-shrink: 0; /* Prevent label group from shrinking */
+      font-size: 1.3em; /* Make emoji slightly larger for visibility */
+      color: #343a40; /* Consistent color for icons */
+      /* No explicit width, let content define it */
+    }
+
+    /* Sliders within labels */
+    .speech-controls label input[type=range] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px; /* Thicker track */
+        background: #e9ecef; /* Lighter track background */
+        border-radius: 4px;
+        outline: none;
+        transition: opacity 0.2s;
+        flex-grow: 1; /* Allow slider to take available space within its label */
+        flex-shrink: 1; /* Allow slider to shrink */
+        width: 70px; /* Initial width, will be affected by flex-grow/shrink */
+        min-width: 50px; /* Slightly increased min-width for usability */
+    }
+    .speech-controls input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px; /* Larger thumb */
+      height: 20px; /* Larger thumb */
+      border-radius: 50%;
+      background: #007bff;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin-top: -6px; /* Adjust thumb position */
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    .speech-controls input[type=range]::-webkit-slider-thumb:hover {
+        background: #0056b3;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .speech-controls input[type=range]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #007bff;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    .speech-controls input[type=range]::-moz-range-thumb:hover {
+        background: #0056b3;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    /* Progress bar */
+    .speech-progress {
+        flex-grow: 1; /* Progress bar takes remaining space */
+        flex-shrink: 1; /* Allow it to shrink */
+        min-width: 120px; /* Increased min-width for better visibility */
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-left: 0.75rem;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .speech-progress-bar {
+      height: 100%;
+      background: linear-gradient(to right, #007bff, #20c997); /* More vibrant gradient */
+      width: 0%;
+      transition: width 0.2s ease-out;
+      border-radius: 4px;
+    }
+
+
+    /* Fallback message styling */
+    #fallback {
+      display: none;
+      text-align: center;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #fff3cd; /* Warning yellow background */
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      color: #856404;
+      font-size: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    #fallback a {
+      color: #007bff;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+    #fallback a:hover {
+      color: #0056b3;
+    }
+
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      body {
+        padding: 0.75rem;
+        padding-bottom: 70px; /* Adjusted padding for mobile fixed bar */
+      }
+      .container {
+        margin: 1rem auto;
+        padding: 1rem;
+        border-radius: 8px;
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+      #search-wrapper {
+        margin-top: 0.5rem;
+        margin-bottom: 1rem; /* Adjust for smaller screens */
+      }
+      #search {
+        padding: 0.7rem 0.8rem;
+        font-size: 0.95rem;
+      }
+      .toc {
+        margin-top: 1rem; /* Adjust for smaller screens */
+        padding-bottom: 0.4rem;
+      }
+      .toc a {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 20px;
+      }
+      details {
+        margin: 0.8rem 0;
+        border-radius: 8px;
+      }
+      summary {
+        padding: 0.8rem 1rem 0.8rem 2rem; /* Adjusted left padding for mobile */
+        font-size: 1rem;
+      }
+      summary::before {
+        left: 0.8rem; /* Adjusted icon position for mobile */
+      }
+      .content-body {
+        padding: 1rem;
+        font-size: 0.95rem;
+      }
+      /* Fixed Player Bar adjustments for mobile */
+      .fixed-player-bar {
+        padding: 8px 0.75rem; /* Smaller padding for mobile */
+      }
+      /* Speech controls adjustments for mobile */
+      .speech-controls {
+        gap: 0.4rem; /* Smaller gap for mobile */
+        margin-top: 0; /* Removed margin as it's now in fixed-player-bar */
+        padding-top: 0; /* Removed padding as it's now in fixed-player-bar */
+        justify-content: flex-start; /* Maintain align to start */
+      }
+      .speech-controls button {
+          min-width: 60px;
+          padding: 0.5rem 0.7rem;
+      }
+      .speech-controls label {
+          font-size: 1.1em;
+          gap: 0.15em;
+      }
+      .speech-controls label input[type=range] {
+          width: 60px;
+          min-width: 40px;
+      }
+      .speech-progress {
+          min-width: 100px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 0.5rem;
+        padding-bottom: 60px; /* Further adjusted padding for smallest mobile fixed bar */
+      }
+      .container {
+        padding: 0.8rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .toc a {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+      }
+      summary {
+        font-size: 0.9rem;
+        padding: 0.7rem 0.8rem 0.7rem 1.8rem; /* Further adjusted left padding for smallest mobile */
+      }
+      summary::before {
+        left: 0.7rem; /* Further adjusted icon position for smallest mobile */
+      }
+      .content-body {
+        padding: 0.8rem;
+      }
+      .speech-controls {
+          gap: 0.3rem; /* Even smaller gap for very small screens */
+      }
+      .speech-controls button {
+          min-width: 50px;
+          padding: 0.4rem 0.6rem;
+          font-size: 0.85em;
+      }
+      .speech-controls label {
+          font-size: 1em;
+      }
+      .speech-controls label input[type=range] {
+          width: 50px;
+          min-width: 30px;
+      }
+      .speech-progress {
+          min-width: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📜 Danh sách các bài thơ</h1>
+    <div id="search-wrapper"> <!-- New wrapper for search input and suggestions -->
+        <input type="text" id="search" placeholder="Tìm kiếm bài thơ..." autocomplete="off"/>
+        <ul id="search-suggestions"></ul> <!-- Changed to ul for semantic list -->
+        <div id="search-results-info"></div> <!-- For displaying search results count - this is replaced by search-result-count -->
+    </div>
+    <p id="search-result-count" style="margin: 0 0 1rem; color: #555; font-weight: 500; text-align: center;"></p> <!-- Added search result count -->
+    <div class="toc" id="toc">Đang tải dữ liệu...</div>
+    <div id="accordion"></div>
+    <div id="fallback" style="display:none; text-align:center; margin-top:20px;">
+      ⚠️ Trình duyệt hiện tại không hỗ trợ hiển thị dữ liệu từ Google Sheets.<br>
+      <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTjl66tsHr053yFDCTxSKViC0G24MNzmaW7ofFMMSMJVwHBOslw6usujYUvcDnnymA7ZFbL1BZ6QEYf/pubhtml" target="_blank">Xem danh sách bài thơ tại đây</a>.
+    </div>
+  </div>
+
+  <!-- This is the new fixed player bar -->
+  <div class="fixed-player-bar">
+    <div class="speech-controls">
+        <!-- These elements will be moved here from inside the details section dynamically -->
+        <!-- They are initially empty and will be populated by JS when a poem is opened -->
+    </div>
+  </div>
+
+
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Fuse.js for fuzzy searching -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+  <script>
+    // URL của Google Sheet đã publish dưới dạng CSV
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjl66tsHr053yFDCTxSKViC0G24MNzmaW7ofFMMSMJVwHBOslw6usujYUvcDnnymA7ZFbL1BZ6QEYf/pub?output=csv";
+    let originalData = []; // Lưu trữ dữ liệu gốc từ Google Sheet
+    let fuse = null; // Fuse.js instance
+    let currentUtterance = null; // Đối tượng SpeechSynthesisUtterance hiện tại
+    let isPlaying = false; // Trạng thái phát âm thanh (đang phát hay dừng)
+    let currentVolume = 1; // Âm lượng hiện tại (0-1)
+    let currentRate = 1; // Tốc độ đọc hiện tại (0.1-10)
+    let progressInterval = null; // Biến lưu trữ ID của setInterval cho thanh tiến trình
+    let currentIndex = -1; // Chỉ số của bài thơ đang được phát
+    let autoPlay = false; // Chế độ tự động phát liên tục
+
+    // Biến toàn cục để lưu trữ ngữ cảnh của bài thơ đang phát
+    let currentPlayingText = "";
+    let currentPlayingProgressBar = null;
+    let currentPlayingToggleButton = null;
+
+    // Tham chiếu đến các phần tử DOM cho gợi ý tìm kiếm
+    const searchInput = document.getElementById("search");
+    const searchSuggestions = document.getElementById("search-suggestions");
+    const searchWrapper = document.getElementById("search-wrapper"); // New reference to the wrapper
+    const searchResultCountElement = document.getElementById("search-result-count"); // New reference for result count display
+    const fixedPlayerControlsContainer = document.querySelector(".fixed-player-bar .speech-controls"); // Reference to the fixed controls container
+
+    /**
+     * Hàm trợ giúp để loại bỏ dấu tiếng Việt và chuyển về chữ thường.
+     * @param {string} str - Chuỗi tiếng Việt cần xử lý.
+     * @returns {string} Chuỗi đã được loại bỏ dấu và chuyển về chữ thường.
+     */
+    function removeVietnameseAccents(str) {
+      if (!str) return ''; // Handle null or undefined input
+      str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+      str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+      str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+      str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+      str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+      str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+      str = str.replace(/đ/g, "d");
+      str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+      str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+      str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+      str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+      str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+      str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+      str = str.replace(/Đ/g, "D");
+      return str.toLowerCase();
+    }
+
+    /**
+     * Tạo index cho Fuse.js.
+     * @param {Array} data - Dữ liệu gốc để tạo index.
+     */
+    function createFuseIndex(data) {
+      fuse = new Fuse(data, {
+        keys: [
+          { name: "Tiêu đề", weight: 0.7 },
+          { name: "Nội dung", weight: 0.3 }
+        ],
+        threshold: 0.4,           // Cho phép sai chính tả nhẹ
+        distance: 100,
+        includeScore: true,
+        minMatchCharLength: 2,
+        ignoreLocation: true,
+        shouldSort: true,
+        includeMatches: true // Required for highlight
+      });
+    }
+
+    /**
+     * Tải dữ liệu từ Google Sheet và hiển thị lên giao diện.
+     */
+    async function loadData() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const csv = await response.text();
+        // Phân tích cú pháp CSV thành dữ liệu JSON
+        const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+        originalData = data.filter(row => row["Tiêu đề"] || row["Nội dung"]); // Filter out empty rows
+
+        // Initialize Fuse.js after data is loaded
+        createFuseIndex(originalData);
+
+        renderContent(originalData); // Render all original content initially
+      } catch (e) {
+        // Xử lý lỗi nếu không tải được dữ liệu (ví dụ: mất mạng, URL sai)
+        console.error("Lỗi khi tải dữ liệu:", e);
+        document.getElementById("toc").style.display = "none";
+        document.getElementById("accordion").style.display = "none";
+        document.getElementById("fallback").style.display = "block"; // Hiển thị thông báo lỗi
+        searchInput.disabled = true; // Disable search input on error
+        searchInput.placeholder = "Tìm kiếm không khả dụng";
+      }
+    }
+
+    /**
+     * Hàm trợ giúp để highlight các từ khóa trong văn bản.
+     * @param {string} text - Văn bản gốc.
+     * @param {string} keyword - Từ khóa cần highlight.
+     * @returns {string} Văn bản đã được highlight dưới dạng HTML.
+     */
+    function highlightKeyword(text, keyword) {
+      if (!text || !keyword) return text;
+      const normalizedKeyword = removeVietnameseAccents(keyword).trim();
+      if (!normalizedKeyword) return text;
+
+      // Escape special characters in the keyword for regex
+      const escapedKeyword = normalizedKeyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const pattern = new RegExp(`(${escapedKeyword})`, 'gi'); // Use global and case-insensitive
+      
+      // Perform replace on the non-accented version for matching,
+      // but use the original text for highlighting
+      let result = "";
+      let lastIndex = 0; // Initialize lastIndex
+      const normalizedText = removeVietnameseAccents(text);
+      let match;
+      
+      // Use exec in a loop for more robust matching
+      while ((match = pattern.exec(normalizedText)) !== null) {
+          const start = match.index;
+          const end = start + match[0].length;
+          result += text.substring(lastIndex, start);
+          result += '<mark class="highlight">' + text.substring(start, end) + '</mark>'; // Use <mark>
+          lastIndex = end;
+      }
+      result += text.substring(lastIndex);
+      return result;
+    }
+
+    /**
+     * Hiển thị nội dung các bài thơ (hoặc kết quả tìm kiếm) lên giao diện.
+     * @param {Array} displayData - Mảng các đối tượng bài thơ để hiển thị.
+     */
+    function renderContent(displayData) {
+      const toc = document.getElementById("toc"); // Element cho mục lục
+      const container = document.getElementById("accordion"); // Element cho phần nội dung (accordion)
+      toc.innerHTML = ''; // Xóa nội dung cũ
+      container.innerHTML = ''; // Xóa nội dung cũ
+
+      const keyword = searchInput.value.trim();
+
+      if (displayData.length === 0 && keyword !== "") {
+          container.innerHTML = '<p style="text-align: center; margin-top: 20px; color: #6c757d;">Không tìm thấy kết quả nào phù hợp.</p>';
+          return;
+      }
+
+      displayData.forEach((row, i) => { // 'row' is now directly the poem object
+        const originalIndex = originalData.indexOf(row); // Get the stable original index
+
+        const title = row["Tiêu đề"] || `Bài ${originalIndex + 1}`;
+        const content = row["Nội dung"] || "";
+        const image = row["Ảnh"] || "";
+
+        // Apply highlighting
+        const displayTitle = highlightKeyword(title, keyword);
+        const displayContent = highlightKeyword(content.replace(/\n/g, "<br>"), keyword);
+
+        // Tạo thẻ <details> cho mỗi bài thơ
+        const details = document.createElement("details");
+        details.id = `item-${originalIndex}`; // Use original index for stable ID
+
+        // Tạo thẻ <summary> (tiêu đề có thể click để mở/đóng)
+        const summary = document.createElement("summary");
+        summary.innerHTML = displayTitle; // Use innerHTML for highlighted text
+        summary.onclick = (e) => {
+          e.preventDefault(); // Ngăn chặn hành vi mặc định của thẻ <details>/<summary> để quản lý thủ công
+
+          const wasOpen = details.hasAttribute('open');
+          const currentDetailIndex = originalIndex;
+
+          // Dừng bất kỳ âm thanh nào đang phát
+          speechSynthesis.cancel();
+          isPlaying = false;
+          // Đặt lại tất cả các nút play/pause về trạng thái ban đầu
+          document.querySelectorAll('.speech-controls button').forEach(btn => {
+              // Only reset buttons in the fixed player bar, not the ones that might be dynamically created if we move them
+              // Or better, ensure only the fixed player bar has these buttons
+              if (fixedPlayerControlsContainer.contains(btn)) {
+                if (btn.innerHTML.includes("⏸️")) {
+                    btn.innerHTML = "▶️ Phát";
+                } else if (btn.innerHTML.includes("⏯️")) {
+                    btn.innerHTML = "⏯️ Phát/Dừng";
+                }
+              }
+          });
+
+          if (!wasOpen) { // Nếu chi tiết đang đóng (và sẽ mở ra do click)
+            // Đóng tất cả các chi tiết khác
+            document.querySelectorAll('details').forEach((d) => {
+              if (d !== details && d.hasAttribute('open')) {
+                d.removeAttribute('open');
+              }
+            });
+
+            // Mở chi tiết hiện tại
+            details.setAttribute("open", "");
+            highlightTOC(currentDetailIndex); // Đánh dấu trong TOC
+            details.scrollIntoView({ behavior: "smooth" }); // Cuộn vào tầm nhìn
+
+            // Di chuyển các điều khiển phát vào thanh cố định và bắt đầu phát
+            moveControlsToFixedBar(details, title, content, originalIndex);
+            
+          } else { // Nếu chi tiết đang mở (và sẽ đóng lại do click)
+            details.removeAttribute("open"); // Đóng chi tiết
+            // Nếu bài thơ đang đóng là bài đang phát, bỏ đánh dấu trong TOC
+            if (currentIndex === currentDetailIndex) {
+                 highlightTOC(-1); // Bỏ đánh dấu tất cả trong TOC
+                 currentIndex = -1; // Đặt lại chỉ số bài đang phát
+                 speechSynthesis.cancel(); // Stop speech when closing the active poem
+                 isPlaying = false;
+                 // Clear the fixed player bar
+                 fixedPlayerControlsContainer.innerHTML = '';
+            }
+          }
+        };
+
+        // Tạo phần thân nội dung bài thơ
+        const body = document.createElement("div");
+        body.className = "content-body";
+        body.innerHTML = displayContent + (image ? `<img src="${image}" onerror="this.style.display='none';">` : "");
+
+        // Append summary and body to details
+        details.appendChild(summary);
+        details.appendChild(body);
+        container.appendChild(details);
+
+        // Tạo liên kết trong mục lục
+        const link = document.createElement("a");
+        link.href = `#item-${originalIndex}`; // Use original index for stable ID
+        link.innerHTML = displayTitle; // Use innerHTML for highlighted text
+        link.onclick = e => {
+          e.preventDefault();
+          const targetDetails = document.getElementById(`item-${originalIndex}`);
+          if (targetDetails) {
+              // Ensure only this one is open
+              document.querySelectorAll('details').forEach(d => d !== targetDetails && d.removeAttribute('open'));
+              targetDetails.setAttribute("open", "");
+              targetDetails.scrollIntoView({ behavior: "smooth", block: "start" }); // Cuộn to top of details
+              highlightTOC(originalIndex);
+              moveControlsToFixedBar(targetDetails, title, content, originalIndex);
+          }
+        };
+        toc.appendChild(link);
+      });
+    }
+
+    /**
+     * Creates and moves playback controls for a specific poem to the fixed player bar.
+     * @param {HTMLElement} detailsElement - The <details> element of the poem.
+     * @param {string} title - The title of the poem.
+     * @param {string} content - The content of the poem.
+     * @param {number} originalIndex - The original index of the poem.
+     */
+    function moveControlsToFixedBar(detailsElement, title, content, originalIndex) {
+        // Clear previous controls in the fixed bar
+        fixedPlayerControlsContainer.innerHTML = '';
+
+        // Create new controls (similar to how they were created in renderContent)
+        const progressBar = document.createElement("div");
+        progressBar.className = "speech-progress-bar";
+
+        const btnToggle = document.createElement("button");
+        btnToggle.innerHTML = "⏯️ Phát/Dừng";
+        btnToggle.onclick = () => {
+          if (isPlaying && currentPlayingToggleButton === btnToggle) {
+            speechSynthesis.cancel();
+            isPlaying = false;
+            btnToggle.innerHTML = "▶️ Phát";
+          } else {
+            currentIndex = originalIndex;
+            speak(title + ". " + content, progressBar, btnToggle);
+          }
+        };
+
+        const btnAuto = document.createElement("button");
+        btnAuto.textContent = "🔁 Nghe liên tục";
+        btnAuto.onclick = () => {
+          autoPlay = !autoPlay;
+          btnAuto.classList.toggle("active-auto", autoPlay);
+        };
+        // Set autoPlay state on the button when it's moved
+        btnAuto.classList.toggle("active-auto", autoPlay);
+
+        const volLabel = document.createElement("label");
+        volLabel.innerHTML = "🔉";
+        const vol = document.createElement("input");
+        vol.type = "range"; vol.min = 0; vol.max = 1; vol.step = 0.1; vol.value = currentVolume;
+        vol.oninput = () => {
+          currentVolume = parseFloat(vol.value);
+          if (isPlaying && currentPlayingText && currentPlayingProgressBar && currentPlayingToggleButton) {
+            speechSynthesis.cancel();
+            speak(currentPlayingText, currentPlayingProgressBar, currentPlayingToggleButton);
+          } else if (currentUtterance) {
+            currentUtterance.volume = currentVolume;
+          }
+        };
+        volLabel.appendChild(vol);
+
+        const rateLabel = document.createElement("label");
+        rateLabel.innerHTML = "⏩";
+        const rate = document.createElement("input");
+        rate.type = "range"; rate.min = 0.5; rate.max = 2; rate.step = 0.1; rate.value = currentRate;
+        rate.oninput = () => {
+          currentRate = parseFloat(rate.value);
+          if (isPlaying && currentPlayingText && currentPlayingProgressBar && currentPlayingToggleButton) {
+            speechSynthesis.cancel();
+            speak(currentPlayingText, currentPlayingProgressBar, currentPlayingToggleButton);
+          } else if (currentUtterance) {
+            currentUtterance.rate = currentRate;
+          }
+        };
+        rateLabel.appendChild(rate);
+
+        const progressWrapper = document.createElement("div");
+        progressWrapper.className = "speech-progress";
+        progressWrapper.appendChild(progressBar);
+
+        // Append to the fixed bar's controls container
+        fixedPlayerControlsContainer.append(btnToggle, btnAuto, volLabel, rateLabel, progressWrapper);
+
+        // Start speaking the poem
+        currentIndex = originalIndex;
+        speak(title + ". " + content, progressBar, btnToggle);
+    }
+
+
+    /**
+     * Phát âm thanh từ văn bản.
+     * @param {string} text - Văn bản cần đọc.
+     * @param {HTMLElement} progressBar - Thanh tiến trình để cập nhật trạng thái.
+     * @param {HTMLElement} toggleButton - Nút phát/dừng của bài thơ này.
+     */
+    function speak(text, progressBar, toggleButton) {
+      speechSynthesis.cancel(); // Hủy bỏ bất kỳ quá trình phát nào đang diễn ra
+      if (progressInterval) clearInterval(progressInterval); // Xóa interval cũ nếu có
+
+      // Lưu trữ ngữ cảnh của bài thơ đang được phát
+      currentPlayingText = text;
+      currentPlayingProgressBar = progressBar;
+      currentPlayingToggleButton = toggleButton;
+
+      const utter = new SpeechSynthesisUtterance(text); // Tạo đối tượng utterance
+      utter.lang = "vi-VN"; // Đặt ngôn ngữ là tiếng Việt
+      utter.volume = currentVolume; // Đặt âm lượng
+      utter.rate = currentRate; // Đặt tốc độ
+
+      // Tìm giọng đọc tiếng Việt ưu tiên, nếu không có thì dùng giọng mặc định đầu tiên
+      const voice = speechSynthesis.getVoices().find(v => v.lang.includes("vi")) || speechSynthesis.getVoices()[0];
+      if (voice) utter.voice = voice;
+
+      // Xử lý khi bắt đầu phát
+      utter.onstart = () => {
+        isPlaying = true;
+        // Cập nhật trạng thái nút Play/Pause trên UI
+        if (currentPlayingToggleButton) {
+            currentPlayingToggleButton.innerHTML = "⏸️ Dừng";
+        }
+        if (progressBar) {
+          progressBar.style.width = "0%"; // Đặt lại thanh tiến trình về 0
+          // Ước tính thời lượng dựa trên độ dài văn bản và tốc độ
+          let duration = text.length / currentRate / 15; // 15 là một giá trị ước tính ký tự/giây
+          let start = Date.now(); // Thời điểm bắt đầu phát
+
+          // Cập nhật thanh tiến trình theo thời gian
+          progressInterval = setInterval(() => {
+            let elapsed = (Date.now() - start) / 1000; // Thời gian đã trôi qua (giây)
+            let percent = Math.min(100, (elapsed / duration) * 100); // Tính phần trăm
+            progressBar.style.width = percent + "%";
+          }, 100); // Cập nhật mỗi 100ms
+        }
+      };
+
+      // Xử lý khi kết thúc phát
+      utter.onend = () => {
+        isPlaying = false;
+        // Cập nhật trạng thái nút Play/Pause trên UI
+        if (currentPlayingToggleButton) {
+            currentPlayingToggleButton.innerHTML = "▶️ Phát";
+        }
+        if (progressBar) progressBar.style.width = "100%"; // Đảm bảo thanh tiến trình đầy
+        if (progressInterval) clearInterval(progressInterval); // Xóa interval
+
+        // Xóa ngữ cảnh đang phát
+        currentPlayingText = "";
+        currentPlayingProgressBar = null;
+        currentPlayingToggleButton = null;
+
+        // Nếu chế độ tự động phát đang bật và còn bài thơ tiếp theo
+        if (autoPlay && currentIndex + 1 < originalData.length) {
+          const nextDetails = document.querySelector(`#item-${currentIndex + 1}`); // Lấy thẻ details của bài thơ tiếp theo
+          if (nextDetails) {
+            nextDetails.setAttribute("open", ""); // Mở thẻ details của bài tiếp theo
+            // Đóng tất cả các thẻ details khác
+            document.querySelectorAll("details").forEach(d => d !== nextDetails && d.removeAttribute("open"));
+            nextDetails.scrollIntoView({ behavior: "smooth", block: "start" }); // Cuộn mượt đến bài thơ tiếp theo
+            const nextRow = originalData[currentIndex + 1]; // Lấy dữ liệu bài thơ tiếp theo
+            currentIndex += 1; // Tăng chỉ số bài thơ
+            
+            // Call moveControlsToFixedBar for the next poem
+            moveControlsToFixedBar(nextDetails, nextRow["Tiêu đề"], nextRow["Nội dung"], currentIndex);
+
+          } else {
+            // No more poems to autoplay, clear the fixed player bar
+            fixedPlayerControlsContainer.innerHTML = '';
+          }
+        } else {
+            // Autoplay is off or no more poems, clear the fixed player bar
+            fixedPlayerControlsContainer.innerHTML = '';
+        }
+      };
+
+      currentUtterance = utter; // Lưu trữ đối tượng utterance hiện tại
+      speechSynthesis.speak(utter); // Bắt đầu phát âm thanh
+    }
+
+    /**
+     * Đánh dấu liên kết trong mục lục là "active".
+     * @param {number} index - Chỉ số của bài thơ cần đánh dấu.
+     */
+    function highlightTOC(index) {
+      document.querySelectorAll(".toc a").forEach((a, i) => {
+        a.classList.toggle("active", i === index); // Thêm/bỏ class 'active'
+      });
+    }
+
+    /**
+     * Hiển thị danh sách gợi ý tìm kiếm.
+     * @param {Array} fuseResults - Mảng các đối tượng FuseResult để hiển thị làm gợi ý.
+     */
+    function displaySuggestions(fuseResults) {
+        searchSuggestions.innerHTML = ''; // Clear previous suggestions
+
+        if (fuseResults.length === 0 || searchInput.value.trim() === "") {
+            searchSuggestions.style.display = 'none';
+            searchWrapper.classList.remove('suggestions-open'); // Remove class when no suggestions
+            return;
+        }
+
+        // Limit to top 5 suggestions for cleaner display
+        fuseResults.slice(0, 5).forEach((fuseResult) => {
+            const li = document.createElement('li');
+            li.textContent = fuseResult.item["Tiêu đề"] || `Bài ${originalData.indexOf(fuseResult.item) + 1}`;
+            li.addEventListener('click', () => {
+                searchInput.value = li.textContent; // Fill search input with selected title
+                searchSuggestions.style.display = 'none'; // Hide suggestions
+                searchWrapper.classList.remove('suggestions-open'); // Remove class
+                searchResultCountElement.textContent = ""; // Hide result info
+
+                // Render only the selected item
+                renderContent([fuseResult.item]); // Pass the original item for rendering
+
+                // After rendering the exact match, ensure it's open and plays
+                const matchedIndex = originalData.indexOf(fuseResult.item);
+                if (matchedIndex !== -1) {
+                    const targetDetails = document.getElementById(`item-${matchedIndex}`);
+                    if (targetDetails) {
+                        // Ensure only this one is open
+                        document.querySelectorAll('details').forEach(d => d !== targetDetails && d.removeAttribute('open'));
+                        targetDetails.setAttribute("open", "");
+                        targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+                        highlightTOC(matchedIndex);
+                        const title = fuseResult.item["Tiêu đề"];
+                        const content = fuseResult.item["Nội dung"];
+                        moveControlsToFixedBar(targetDetails, title, content, matchedIndex);
+                    }
+                }
+            });
+            searchSuggestions.appendChild(li);
+        });
+        searchSuggestions.style.display = 'block'; // Show suggestions
+        searchWrapper.classList.add('suggestions-open'); // Add class when suggestions are shown
+    }
+
+
+    /**
+     * Xử lý sự kiện nhập liệu vào ô tìm kiếm.
+     */
+    searchInput.addEventListener("input", function () {
+      const keyword = this.value.trim();
+
+      if (!keyword) {
+        searchResultCountElement.textContent = "";
+        renderContent(originalData); // Render all if no keyword
+        displaySuggestions([]); // Clear and hide suggestions
+        // Also clear the fixed player bar if no search results and no current poem
+        if (currentIndex === -1 || !isPlaying) {
+            fixedPlayerControlsContainer.innerHTML = '';
+        }
+        return;
+      }
+
+      // Use Fuse.js for searching
+      if (fuse) {
+          const results = fuse.search(keyword);
+          const matchedItems = results.map(r => r.item);
+
+          // Update result count message
+          searchResultCountElement.textContent = `Đã tìm thấy ${matchedItems.length} kết quả cho từ khóa "${keyword}"`;
+          searchResultCountElement.style.display = 'block'; // Ensure it's visible
+
+          displaySuggestions(results); // Pass full Fuse results to suggestions for consistency
+
+          // Render content based on filtered results for the main view
+          renderContent(matchedItems); // Pass the original items for rendering
+
+          // Scroll to the first result if any
+          if (matchedItems.length > 0) {
+              const firstResultOriginalIndex = originalData.indexOf(matchedItems[0]);
+              if (firstResultOriginalIndex !== -1) {
+                  const firstDetails = document.getElementById(`item-${firstResultOriginalIndex}`);
+                  if (firstDetails) {
+                      // Open and scroll to the first result
+                      document.querySelectorAll('details').forEach(d => d !== firstDetails && d.removeAttribute('open'));
+                      firstDetails.setAttribute("open", "");
+                      firstDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+                      highlightTOC(firstResultOriginalIndex);
+                      // Auto-play the first result (as per previous request)
+                      const title = originalData[firstResultOriginalIndex]["Tiêu đề"];
+                      const content = originalData[firstResultOriginalIndex]["Nội dung"];
+                      moveControlsToFixedBar(firstDetails, title, content, firstResultOriginalIndex);
+                  }
+              }
+          } else {
+            // If no results, clear the accordion and TOC active state
+            document.getElementById("accordion").innerHTML = '<p style="text-align: center; margin-top: 20px; color: #6c757d;">Không tìm thấy kết quả nào phù hợp.</p>';
+            highlightTOC(-1); // Clear TOC active state
+            speechSynthesis.cancel(); // Stop any ongoing speech
+            isPlaying = false;
+            // Clear the fixed player bar if no results
+            fixedPlayerControlsContainer.innerHTML = '';
+          }
+      } else {
+          console.warn("Fuse.js not initialized. Search functionality is disabled.");
+          searchResultCountElement.textContent = "Chức năng tìm kiếm không khả dụng.";
+          searchResultCountElement.style.display = 'block';
+          // Render original content if search is disabled
+          renderContent(originalData);
+          fixedPlayerControlsContainer.innerHTML = ''; // Also clear fixed player if search is disabled
+      }
+    });    
+
+    // Ẩn gợi ý khi ô tìm kiếm mất tiêu điểm
+    searchInput.addEventListener('blur', () => {
+        // Sử dụng setTimeout để cho phép sự kiện click trên gợi ý kịp thời kích hoạt
+        setTimeout(() => {
+            searchSuggestions.style.display = 'none';
+            searchWrapper.classList.remove('suggestions-open'); // Remove class on blur
+        }, 150);
+    });    
+
+    // Hiển thị lại gợi ý khi ô tìm kiếm có tiêu điểm và có nội dung
+    searchInput.addEventListener('focus', () => {
+        if (searchInput.value.trim() !== "") {
+            // Re-trigger input event to re-filter and show suggestions
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    });    
+
+    // Sự kiện khi danh sách giọng đọc thay đổi (đảm bảo giọng đọc được tải)
+    window.speechSynthesis.onvoiceschanged = () => {
+      // Có thể thêm logic để chọn giọng mặc định ở đây nếu cần, nhưng hiện tại đã xử lý trong hàm speak
+    };    
+
+    // Tải dữ liệu khi trang web được tải (chạy ngay sau khi DOM được tải)
+    loadData();    
+  </script>    
+</body>    
+</html>    
