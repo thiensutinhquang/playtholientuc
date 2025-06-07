@@ -38,14 +38,98 @@
       transition: all 0.3s ease-in-out; /* Smooth transitions for any size changes */
     }
 
+    /* Header Container for Title and Nav Buttons */
+    .header-container {
+        display: flex;
+        justify-content: space-between; /* Pushes h1 and nav to opposite ends */
+        align-items: center;
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        margin-bottom: 1rem;
+    }
+
     /* Main heading styling */
     h1 {
-      text-align: center;
+      text-align: center; /* Initial alignment, might be overridden by flex */
       font-size: 2.2rem; /* Larger font size */
       color: #007bff;
-      margin-bottom: 1rem; /* Reduced space below heading */
+      margin: 0; /* Remove default margin */
       font-weight: 700; /* Bolder font */
       letter-spacing: -0.5px; /* Slight letter spacing adjustment */
+      flex-shrink: 1; /* Allow to shrink if needed */
+      min-width: 200px; /* Ensure title doesn't disappear */
+    }
+
+    /* Header Navigation (buttons on the right) */
+    .header-nav {
+        display: flex;
+        gap: 0.5rem; /* Space between buttons */
+        align-items: center;
+        flex-shrink: 0; /* Prevent nav from shrinking */
+        margin-left: auto; /* Push to the right */
+        flex-wrap: wrap; /* Allow buttons to wrap if space is tight */
+        justify-content: flex-end; /* Align buttons to the right if wrapped */
+    }
+
+    .header-nav .nav-button,
+    .dropdown-toggle {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 20px;
+        border: none;
+        background: #6c757d; /* A neutral gray */
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        text-decoration: none; /* For anchor tags styled as buttons */
+        display: inline-flex; /* For centering text/icons */
+        align-items: center;
+        white-space: nowrap; /* Prevent text wrapping */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .header-nav .nav-button:hover,
+    .dropdown-toggle:hover {
+        background: #5a6268; /* Darker gray on hover */
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Dropdown container */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 180px; /* Increased min-width for better spacing */
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1001; /* Higher z-index to be above other elements */
+        right: 0; /* Align to right of parent button */
+        border-radius: 8px;
+        overflow: hidden;
+        padding: 5px 0; /* Padding inside the menu */
+    }
+
+    .dropdown-menu a {
+        color: #343a40;
+        padding: 10px 15px; /* Adjusted padding */
+        text-decoration: none;
+        display: flex; /* Use flex for icon and text alignment */
+        align-items: center;
+        gap: 8px; /* Space between icon and text */
+        white-space: nowrap; /* Prevent wrapping */
+        transition: background-color 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .dropdown-menu a:hover {
+        background-color: #e9ecef;
+    }
+
+    .dropdown.active .dropdown-menu {
+        display: block;
     }
 
     /* Search wrapper for positioning input and suggestions */
@@ -130,16 +214,16 @@
     }
 
     /* For displaying search results count */
-    #search-result-count {  
+    #search-result-count {
       margin: 0 0 1rem; /* Adjust margin as per instruction */
-      color: #555;  
+      color: #555;
       font-weight: 500;
       text-align: center;
     }
 
 
     /* Table of Contents (TOC) layout */
-    .toc {  
+    .toc {
       display: flex;
       overflow-x: auto; /* Enable horizontal scrolling */
       gap: 0.75rem; /* Consistent gap */
@@ -452,9 +536,33 @@
         padding: 1rem;
         border-radius: 8px;
       }
+      .header-container {
+        flex-direction: column; /* Stack title and nav vertically */
+        align-items: center; /* Center items when stacked */
+        gap: 0.8rem; /* Space between stacked items */
+      }
       h1 {
         font-size: 1.8rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem; /* Reduced margin when stacked */
+        text-align: center; /* Ensure title is centered when stacked */
+      }
+      .header-nav {
+        width: 100%; /* Take full width when stacked */
+        justify-content: center; /* Center buttons horizontally */
+        margin-left: 0; /* Remove auto margin */
+      }
+      .header-nav .nav-button,
+      .dropdown-toggle {
+          padding: 0.5rem 0.8rem;
+          font-size: 0.85rem;
+          border-radius: 15px;
+      }
+      .dropdown-menu {
+          min-width: 150px; /* Adjusted min-width for mobile dropdown */
+      }
+      .dropdown-menu a {
+          padding: 8px 12px;
+          font-size: 0.9rem;
       }
       #search-wrapper {
         margin-top: 0.5rem;
@@ -564,7 +672,24 @@
 </head>
 <body>
   <div class="container">
-    <h1>📜 Danh sách các bài thơ</h1>
+    <div class="header-container">
+      <h1>📜 Danh sách các bài thơ</h1>
+      <div class="header-nav">
+        <a href="https://sites.google.com/view/thiensutinhquang" target="_blank" class="nav-button">Trang chủ</a>
+        <a href="https://sites.google.com/view/thiensutinhquang/%C3%A2m-nh%E1%BA%A1c" target="_blank" class="nav-button">Nghe nhạc</a>
+        <div class="dropdown">
+          <button class="dropdown-toggle">Nền tảng ▾</button>
+          <div class="dropdown-menu">
+            <a href="https://www.youtube.com/channel/UCLdLj1-g4TI5lSmWeD60mnA" target="_blank">📺 Youtube</a>
+            <a href="https://www.tiktok.com/@minhsutinhquang" target="_blank">🎵 TikTok</a>
+            <a href="https://www.facebook.com/phatphapnhiemmauTinhQuang" target="_blank">📘 Facebook</a>
+            <a href="https://t.me/Giaoly_phap_don_ngo" target="_blank">✈️ Telegram</a>
+            <a href="https://zalo.me/g/dukrae245" target="_blank">💬 Zalo</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div id="search-wrapper"> <!-- New wrapper for search input and suggestions -->
         <input type="text" id="search" placeholder="Tìm kiếm bài thơ..." autocomplete="off"/>
         <ul id="search-suggestions"></ul> <!-- Changed to ul for semantic list -->
@@ -617,6 +742,25 @@
     const searchWrapper = document.getElementById("search-wrapper"); // New reference to the wrapper
     const searchResultCountElement = document.getElementById("search-result-count"); // New reference for result count display
     const fixedPlayerControlsContainer = document.querySelector(".fixed-player-bar .speech-controls"); // Reference to the fixed controls container
+
+    // Dropdown functionality
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+
+    dropdownToggle.addEventListener('click', function() {
+        this.closest('.dropdown').classList.toggle('active');
+    });
+
+    // Close the dropdown if the user clicks outside of it
+    window.addEventListener('click', function(event) {
+        if (!event.target.matches('.dropdown-toggle') && !event.target.closest('.dropdown-menu')) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(function(dropdown) {
+                dropdown.classList.remove('active');
+            });
+        }
+    });
+
 
     /**
      * Hàm trợ giúp để loại bỏ dấu tiếng Việt và chuyển về chữ thường.
@@ -1132,7 +1276,7 @@
           renderContent(originalData);
           fixedPlayerControlsContainer.innerHTML = ''; // Also clear fixed player if search is disabled
       }
-    });    
+    });      
 
     // Ẩn gợi ý khi ô tìm kiếm mất tiêu điểm
     searchInput.addEventListener('blur', () => {
@@ -1141,7 +1285,7 @@
             searchSuggestions.style.display = 'none';
             searchWrapper.classList.remove('suggestions-open'); // Remove class on blur
         }, 150);
-    });    
+    });      
 
     // Hiển thị lại gợi ý khi ô tìm kiếm có tiêu điểm và có nội dung
     searchInput.addEventListener('focus', () => {
@@ -1149,15 +1293,15 @@
             // Re-trigger input event to re-filter and show suggestions
             searchInput.dispatchEvent(new Event('input'));
         }
-    });    
+    });      
 
     // Sự kiện khi danh sách giọng đọc thay đổi (đảm bảo giọng đọc được tải)
     window.speechSynthesis.onvoiceschanged = () => {
       // Có thể thêm logic để chọn giọng mặc định ở đây nếu cần, nhưng hiện tại đã xử lý trong hàm speak
-    };    
+    };      
 
     // Tải dữ liệu khi trang web được tải (chạy ngay sau khi DOM được tải)
-    loadData();    
-  </script>    
-</body>    
-</html>    
+    loadData();      
+  </script>        
+</body>        
+</html>        
