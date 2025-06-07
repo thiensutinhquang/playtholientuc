@@ -362,7 +362,7 @@
         z-index: 1000; /* Ensure it stays on top */
         display: flex; /* Use flexbox for internal arrangement */
         align-items: center;
-        justify-content: center; /* Center the controls if there's extra space */
+        justify-content: space-between; /* Space out controls and scroll-to-top button */
     }
 
     /* Speech controls styling - INSIDE FIXED BAR */
@@ -371,8 +371,8 @@
       flex-wrap: nowrap; /* Forces content on one line */
       gap: 0.75rem; /* Gap between direct children */
       align-items: center;
-      max-width: 900px; /* Limit width of controls for desktop */
-      width: 100%; /* Take full width of parent (fixed-player-bar) */
+      width: auto; /* Let it shrink/grow as needed */
+      flex-grow: 1; /* Allow it to grow and take available space */
       overflow-x: auto; /* Allow horizontal scrolling if too wide */
       padding-bottom: 5px; /* Space for scrollbar on some browsers */
       /* Remove margin-top, padding-top, border-top as they are now on fixed-player-bar */
@@ -502,6 +502,28 @@
       border-radius: 4px;
     }
 
+    /* Scroll to Top Button */
+    .scroll-to-top-button {
+        flex-shrink: 0; /* Prevent it from shrinking */
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+        line-height: 1.2; /* For multiline text/emoji */
+        border-radius: 15px;
+        border: none;
+        background: #17a2b8; /* A distinct color, e.g., info blue */
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-left: 1rem; /* Add some margin to separate it from speech controls */
+    }
+    .scroll-to-top-button:hover {
+        background: #138496;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
 
     /* Fallback message styling */
     #fallback {
@@ -622,6 +644,11 @@
       .speech-progress {
           min-width: 100px;
       }
+      .scroll-to-top-button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+      }
     }
 
     @media (max-width: 480px) {
@@ -667,6 +694,11 @@
       .speech-progress {
           min-width: 80px;
       }
+      .scroll-to-top-button {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.7rem;
+        margin-left: 0.3rem;
+      }
     }
   </style>
 </head>
@@ -710,6 +742,9 @@
         <!-- These elements will be moved here from inside the details section dynamically -->
         <!-- They are initially empty and will be populated by JS when a poem is opened -->
     </div>
+    <button id="scroll-to-top-button" class="scroll-to-top-button">
+      ⬆️<br>Top
+    </button>
   </div>
 
 
@@ -742,6 +777,7 @@
     const searchWrapper = document.getElementById("search-wrapper"); // New reference to the wrapper
     const searchResultCountElement = document.getElementById("search-result-count"); // New reference for result count display
     const fixedPlayerControlsContainer = document.querySelector(".fixed-player-bar .speech-controls"); // Reference to the fixed controls container
+    const scrollToTopButton = document.getElementById("scroll-to-top-button"); // Reference to the new scroll-to-top button
 
     // Dropdown functionality
     const dropdownToggle = document.querySelector('.dropdown-toggle');
@@ -759,6 +795,11 @@
                 dropdown.classList.remove('active');
             });
         }
+    });
+
+    // Scroll to Top button functionality
+    scrollToTopButton.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
 
@@ -1012,7 +1053,7 @@
         };
 
         const btnAuto = document.createElement("button");
-        btnAuto.textContent = "🔁 Nghe liên tục";
+        btnAuto.textContent = "� Lặp"; /* Changed from "Nghe liên tục" to "Lặp" */
         btnAuto.onclick = () => {
           autoPlay = !autoPlay;
           btnAuto.classList.toggle("active-auto", autoPlay);
@@ -1276,7 +1317,7 @@
           renderContent(originalData);
           fixedPlayerControlsContainer.innerHTML = ''; // Also clear fixed player if search is disabled
       }
-    });      
+    });
 
     // Ẩn gợi ý khi ô tìm kiếm mất tiêu điểm
     searchInput.addEventListener('blur', () => {
@@ -1285,7 +1326,7 @@
             searchSuggestions.style.display = 'none';
             searchWrapper.classList.remove('suggestions-open'); // Remove class on blur
         }, 150);
-    });      
+    });
 
     // Hiển thị lại gợi ý khi ô tìm kiếm có tiêu điểm và có nội dung
     searchInput.addEventListener('focus', () => {
@@ -1293,15 +1334,16 @@
             // Re-trigger input event to re-filter and show suggestions
             searchInput.dispatchEvent(new Event('input'));
         }
-    });      
+    });
 
     // Sự kiện khi danh sách giọng đọc thay đổi (đảm bảo giọng đọc được tải)
     window.speechSynthesis.onvoiceschanged = () => {
       // Có thể thêm logic để chọn giọng mặc định ở đây nếu cần, nhưng hiện tại đã xử lý trong hàm speak
-    };      
+    };
 
     // Tải dữ liệu khi trang web được tải (chạy ngay sau khi DOM được tải)
-    loadData();      
-  </script>        
-</body>        
-</html>        
+    loadData();
+  </script>
+</body>
+</html>
+�
