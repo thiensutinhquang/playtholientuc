@@ -1189,6 +1189,8 @@
         btnAuto.onclick = () => {
           autoPlay = !autoPlay; // Toggle global autoPlay
           btnAuto.classList.toggle("active-auto", autoPlay); // Update button visual
+          btnAuto.setAttribute("aria-pressed", autoPlay); // Update aria-pressed for accessibility
+
           if (!autoPlay) { // If autoplay is turned off
             speechSynthesis.cancel(); // Stop current speech
             isPlaying = false;
@@ -1204,17 +1206,20 @@
           }
         };
 
-        // --- IMPORTANT CHANGE: Set autoPlay to true by default when a new poem is selected ---
-        autoPlay = true; // Set global autoPlay to true
-        btnAuto.classList.add("active-auto"); // Ensure the button shows as active by default
+        // Initialize btnAuto's visual state based on global autoPlay state
+        btnAuto.classList.toggle("active-auto", autoPlay); 
+        btnAuto.setAttribute("aria-pressed", autoPlay);
 
 
         const volLabel = document.createElement("label");
         volLabel.innerHTML = "🔉";
+        const volValueSpan = document.createElement("span"); // New span for volume value
+        volValueSpan.textContent = `${(currentVolume * 10).toFixed(0)}`; // Initial value (0-10)
         const vol = document.createElement("input");
         vol.type = "range"; vol.min = 0; vol.max = 1; vol.step = 0.1; vol.value = currentVolume;
         vol.oninput = () => {
           currentVolume = parseFloat(vol.value);
+          volValueSpan.textContent = `${(currentVolume * 10).toFixed(0)}`; // Update span (0-10)
           if (isPlaying && currentPlayingText && currentPlayingProgressBar && currentPlayingToggleButton) {
             speechSynthesis.cancel();
             speak(currentPlayingText, currentPlayingProgressBar, currentPlayingToggleButton);
@@ -1222,7 +1227,7 @@
             currentUtterance.volume = currentVolume;
           }
         };
-        volLabel.appendChild(vol);
+        volLabel.append(volValueSpan, vol); // Append span and input to label
 
         const rateLabel = document.createElement("label");
         rateLabel.innerHTML = "⏩";
@@ -1242,8 +1247,11 @@
         };
         rateLabel.append(rateValueSpan, rate); // Append span and input to label
 
-        // Append to row 1 container
-        playerRow1Container.append(btnToggle, btnAuto, volLabel, rateLabel);
+        // Create a div to hold the speech controls for proper CSS application
+        const speechControlsDiv = document.createElement("div");
+        speechControlsDiv.className = "speech-controls";
+        speechControlsDiv.append(btnToggle, btnAuto, volLabel, rateLabel);
+        playerRow1Container.appendChild(speechControlsDiv);
 
 
         // --- Row 2 Controls (New) ---
