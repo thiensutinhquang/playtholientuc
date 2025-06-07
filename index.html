@@ -418,7 +418,7 @@
       background: #007bff;
       color: #fff;
       cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      transition: background 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease; /* Faster transitions for active feedback */
       box-shadow: 0 4px 12px rgba(0,123,255,0.25);
     }
     .speech-controls button:hover,
@@ -427,10 +427,12 @@
       transform: translateY(-3px); /* More pronounced lift */
       box-shadow: 0 6px 15px rgba(0,123,255,0.35);
     }
+    /* Enhanced :active state for general buttons */
     .speech-controls button:active,
     .player-row-2 button:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0,123,255,0.2);
+      transform: translateY(0.5px) scale(0.98); /* Slight press effect */
+      background: #004080; /* Darker blue on press */
+      box-shadow: 0 1px 3px rgba(0,123,255,0.3); /* Softer shadow on press */
     }
 
     /* Specific style for auto-play (loop) button */
@@ -441,6 +443,13 @@
     .speech-controls button.active-auto:hover {
       background: #218838;
     }
+    /* Enhanced :active state for active-auto (Loop) button */
+    .speech-controls button.active-auto:active {
+        background: #1e7e34; /* Even darker green on press for active loop */
+        transform: translateY(0.5px) scale(0.98); /* Consistent press effect */
+        box-shadow: 0 1px 3px rgba(40,167,69,0.3); /* Softer shadow on press */
+    }
+
 
     /* Styles for volume/rate labels and their sliders */
     .speech-controls label {
@@ -918,7 +927,8 @@
      * @returns {string} Văn bản đã được highlight dưới dạng HTML.
      */
     function highlightKeyword(text, keyword) {
-      if (!text || !keyword) return text;
+      if (!text) return text; // Handle null or undefined text input
+      if (!keyword) return text;
       const normalizedKeyword = removeVietnameseAccents(keyword).trim();
       if (!normalizedKeyword) return text;
 
@@ -959,6 +969,7 @@
 
       if (displayData.length === 0 && keyword !== "") {
           container.innerHTML = '<p style="text-align: center; margin-top: 20px; color: #6c757d;">Không tìm thấy kết quả nào phù hợp.</p>';
+          searchResultCountElement.textContent = "Không tìm thấy kết quả nào."; // Clear result message
           return;
       }
 
