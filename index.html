@@ -239,11 +239,11 @@
       height: 7px; /* Thinner scrollbar */
     }
     .toc::-webkit-scrollbar-track {
-      background: #e9ecef; /* Lighter track */
+      background: #e9ecef;
       border-radius: 10px;
     }
     .toc::-webkit-scrollbar-thumb {
-      background: #007bff; /* Vibrant thumb */
+      background: #007bff;
       border-radius: 10px;
       transition: background 0.3s ease;
     }
@@ -437,23 +437,29 @@
 
     /* Specific style for auto-play (loop) button when active */
     .speech-controls button.active-auto {
-      background: #28a745; /* Green for active autoplay */
-      box-shadow: 0 4px 12px rgba(40,167,69,0.25);
+      background: #4CAF50; /* A brighter, more distinct green */
+      box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4); /* More pronounced shadow */
+      border: 2px solid #388E3C; /* A darker green border for emphasis */
+      color: #fff; /* Ensure text remains white for contrast */
+      font-weight: bold; /* Make text bolder */
     }
     .speech-controls button.active-auto:hover {
-      background: #218838;
+      background: #388E3C; /* Darker green on hover */
+      box-shadow: 0 8px 20px rgba(76, 175, 80, 0.5); /* Even more pronounced shadow on hover */
     }
     /* Enhanced :active state for active-auto (Loop) button */
     .speech-controls button.active-auto:active {
-        background: #1e7e34; /* Even darker green on press for active loop */
-        transform: translateY(0.5px) scale(0.98); /* Consistent press effect */
-        box-shadow: 0 1px 3px rgba(40,167,69,0.3); /* Softer shadow on press */
+        background: #1B5E20; /* Even darker green on press for active loop */
+        transform: translateY(1.5px) scale(0.96); /* More pronounced press effect */
+        box-shadow: 0 2px 5px rgba(76, 175, 80, 0.4); /* Softer shadow on press */
+        border: 2px solid #1B5E20; /* Keep border consistent on press */
     }
 
     /* New style for the loop button when it is NOT active (i.e., default for loop button) */
     .speech-controls button.loop-toggle-button:not(.active-auto) {
         background: #6c757d; /* A neutral gray, distinct from blue and green */
         color: #fff;
+        border: 2px solid transparent; /* Transparent border for consistency */
     }
     .speech-controls button.loop-toggle-button:not(.active-auto):hover {
         background: #5a6268; /* Darker gray on hover */
@@ -771,8 +777,7 @@
             <a href="https://www.youtube.com/channel/UCLdLj1-g4TI5lSmWeD60mnA" target="_blank">📺 Youtube</a>
             <a href="https://www.tiktok.com/@minhsutinhquang" target="_blank">🎵 TikTok</a>
             <a href="https://www.facebook.com/phatphapnhiemmauTinhQuang" target="_blank">📘 Facebook</a>
-            <a href="https://t.me/Giaoly_phap_don_ngo" target="_blank">✈️ Telegram</a>
-            <a href="https://zalo.me/g/dukrae245" target="_blank">💬 Zalo</a>
+            <a href="https://t.me/Giaoly_phap_don_ngo" target="_blank">💬 Zalo</a>
           </div>
         </div>
       </div>
