@@ -372,7 +372,7 @@
     .player-row-1 {
         display: flex;
         flex-wrap: nowrap;
-        gap: 0.75rem; /* Default gap */
+        gap: 0.75rem; /* Default gap - this gap now applies between .speech-controls and other potential elements in player-row-1. For now, there's only .speech-controls */
         align-items: center;
         width: 100%; /* Takes full width of parent, considering parent's padding */
         justify-content: center; /* Center controls within the row */
@@ -472,6 +472,14 @@
 
 
     /* Styles for volume/rate labels and their sliders */
+    .speech-controls { /* Added display: flex and alignment for direct children */
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center items within this controls group */
+        gap: 0.5rem; /* Slightly smaller default gap for compactness */
+        flex-wrap: nowrap; /* Keep items on one line, allow overflow-x on parent if needed */
+        width: 100%; /* Take full width of its container */
+    }
     .speech-controls label {
       display: flex;
       align-items: center;
@@ -676,10 +684,14 @@
       /* Speech controls adjustments for mobile */
       .player-row-1 {
         gap: 0.3rem; /* Slightly smaller gap for better compactness */
-        justify-content: flex-start; /* Maintain align to start */
+        /* justify-content: flex-start;  Removed as speech-controls handles centering */
       }
       .player-row-2 {
           gap: 0.4rem; /* Smaller gap for mobile */
+      }
+      /* Speech controls itself on mobile */
+      .speech-controls {
+          gap: 0.25rem; /* Even smaller gap on mobile for its internal elements */
       }
       .speech-controls button,
       .player-row-2 button {
@@ -733,7 +745,7 @@
         padding: 0.8rem;
       }
       .speech-controls {
-          gap: 0.2rem; /* Even smaller gap for very small screens */
+          gap: 0.15rem; /* Even smaller gap for very small screens */
       }
       .player-row-2 {
           gap: 0.3rem;
