@@ -23,7 +23,8 @@
       text-rendering: optimizeLegibility; /* Improve font rendering */
       -webkit-font-smoothing: antialiased; /* Smooth fonts on Webkit browsers */
       -moz-osx-font-smoothing: grayscale; /* Smooth fonts on Firefox */
-      padding-bottom: 80px; /* Add padding to prevent fixed player from overlapping content */
+      /* Adjusted padding-bottom for fixed player bar height + offset */
+      padding-bottom: 110px; /* Base padding for desktop */
     }
 
     /* Main container styling */
@@ -353,7 +354,7 @@
     /* Fixed Player Bar */
     .fixed-player-bar {
         position: fixed;
-        bottom: 0;
+        bottom: 50px; /* Raised by 50px */
         left: 0;
         width: 100%;
         background-color: #ffffff;
@@ -551,7 +552,7 @@
     @media (max-width: 768px) {
       body {
         padding: 0.75rem;
-        padding-bottom: 70px; /* Adjusted padding for mobile fixed bar */
+        padding-bottom: 100px; /* Adjusted padding for mobile fixed bar (50px offset + ~50px bar height) */
       }
       .container {
         margin: 1rem auto;
@@ -621,6 +622,7 @@
       /* Fixed Player Bar adjustments for mobile */
       .fixed-player-bar {
         padding: 8px 0.75rem; /* Smaller padding for mobile */
+        bottom: 50px; /* Remains 50px from the bottom */
       }
       /* Speech controls adjustments for mobile */
       .speech-controls {
@@ -654,7 +656,7 @@
     @media (max-width: 480px) {
       body {
         padding: 0.5rem;
-        padding-bottom: 60px; /* Further adjusted padding for smallest mobile fixed bar */
+        padding-bottom: 90px; /* Further adjusted padding for smallest mobile fixed bar (~50px offset + ~40px bar height) */
       }
       .container {
         padding: 0.8rem;
@@ -799,6 +801,7 @@
 
     // Scroll to Top button functionality
     scrollToTopButton.addEventListener('click', () => {
+        // This will scroll the window where the script is running (which is the iframe's window)
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
@@ -1053,7 +1056,7 @@
         };
 
         const btnAuto = document.createElement("button");
-        btnAuto.textContent = "� Lặp"; /* Changed from "Nghe liên tục" to "Lặp" */
+        btnAuto.textContent = "🔁 Lặp"; /* Changed from "Nghe liên tục" to "Lặp" */
         btnAuto.onclick = () => {
           autoPlay = !autoPlay;
           btnAuto.classList.toggle("active-auto", autoPlay);
@@ -1078,10 +1081,13 @@
 
         const rateLabel = document.createElement("label");
         rateLabel.innerHTML = "⏩";
+        const rateValueSpan = document.createElement("span"); // New span for rate value
+        rateValueSpan.textContent = `x${currentRate.toFixed(2)}`; // Initial value
         const rate = document.createElement("input");
-        rate.type = "range"; rate.min = 0.5; rate.max = 2; rate.step = 0.1; rate.value = currentRate;
+        rate.type = "range"; rate.min = 0.5; rate.max = 2; rate.step = 0.25; rate.value = currentRate; /* Changed step to 0.25 */
         rate.oninput = () => {
           currentRate = parseFloat(rate.value);
+          rateValueSpan.textContent = `x${currentRate.toFixed(2)}`; // Update span
           if (isPlaying && currentPlayingText && currentPlayingProgressBar && currentPlayingToggleButton) {
             speechSynthesis.cancel();
             speak(currentPlayingText, currentPlayingProgressBar, currentPlayingToggleButton);
@@ -1089,7 +1095,7 @@
             currentUtterance.rate = currentRate;
           }
         };
-        rateLabel.appendChild(rate);
+        rateLabel.append(rateValueSpan, rate); // Append span and input to label
 
         const progressWrapper = document.createElement("div");
         progressWrapper.className = "speech-progress";
@@ -1346,4 +1352,3 @@
   </script>
 </body>
 </html>
-�
