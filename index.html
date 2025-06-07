@@ -1073,7 +1073,23 @@
                 targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
                 highlightTOC(currentIndex);
                 moveControlsToFixedBar(targetDetails, prevPoem["Tiêu đề"], prevPoem["Nội dung"], currentIndex);
+            } else {
+                // If previous details element is not found, stop playback and clear controls
+                speechSynthesis.cancel();
+                isPlaying = false;
+                playerRow1Container.innerHTML = '';
+                playerRow2Container.innerHTML = '';
+                currentIndex = -1; // Reset index
+                highlightTOC(-1); // Clear TOC active state
             }
+        } else {
+            // If at the beginning of the list, stop playback and clear controls
+            speechSynthesis.cancel();
+            isPlaying = false;
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
+            currentIndex = -1; // Reset index
+            highlightTOC(-1); // Clear TOC active state
         }
     }
 
@@ -1091,7 +1107,23 @@
                 targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
                 highlightTOC(currentIndex);
                 moveControlsToFixedBar(targetDetails, nextPoem["Tiêu đề"], nextPoem["Nội dung"], currentIndex);
+            } else {
+                // If next details element is not found, stop playback and clear controls
+                speechSynthesis.cancel();
+                isPlaying = false;
+                playerRow1Container.innerHTML = '';
+                playerRow2Container.innerHTML = '';
+                currentIndex = -1; // Reset index
+                highlightTOC(-1); // Clear TOC active state
             }
+        } else {
+            // If at the end of the list, stop playback and clear controls
+            speechSynthesis.cancel();
+            isPlaying = false;
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
+            currentIndex = -1; // Reset index
+            highlightTOC(-1); // Clear TOC active state
         }
     }
 
@@ -1117,18 +1149,34 @@
             btnToggle.innerHTML = "▶️ Phát";
           } else {
             currentIndex = originalIndex;
-            speak(title + ". " + content, currentPlayingProgressBar, btnToggle); // Pass currentPlayingProgressBar here
+            speak(title + ". " + content, currentPlayingProgressBar, btnToggle);
           }
         };
 
         const btnAuto = document.createElement("button");
         btnAuto.textContent = "🔁 Lặp"; /* Changed to include the icon */
         btnAuto.onclick = () => {
-          autoPlay = !autoPlay;
-          btnAuto.classList.toggle("active-auto", autoPlay);
+          autoPlay = !autoPlay; // Toggle global autoPlay
+          btnAuto.classList.toggle("active-auto", autoPlay); // Update button visual
+          if (!autoPlay) { // If autoplay is turned off
+            speechSynthesis.cancel(); // Stop current speech
+            isPlaying = false;
+            btnToggle.innerHTML = "▶️ Phát"; // Reset play button to 'Play'
+            if (currentPlayingProgressBar) {
+              clearInterval(progressInterval);
+              currentPlayingProgressBar.style.width = "0%";
+            }
+            // Clear current playing context, as it's no longer auto-playing
+            currentPlayingText = "";
+            currentPlayingProgressBar = null;
+            currentPlayingToggleButton = null;
+          }
         };
-        // Set autoPlay state on the button when it's moved
-        btnAuto.classList.toggle("active-auto", autoPlay);
+
+        // --- IMPORTANT CHANGE: Set autoPlay to true by default when a new poem is selected ---
+        autoPlay = true; // Set global autoPlay to true
+        btnAuto.classList.add("active-auto"); // Ensure the button shows as active by default
+
 
         const volLabel = document.createElement("label");
         volLabel.innerHTML = "🔉";
@@ -1254,11 +1302,36 @@
         currentPlayingProgressBar = null;
         currentPlayingToggleButton = null;
 
-        // Nếu chế độ tự động phát đang bật và còn bài thơ tiếp theo
-        if (autoPlay) {
-          playNext(); // Use the playNext function for consistent behavior
+        if (autoPlay) { // If autoPlay is true, play next randomly
+          let nextIndex;
+          // Ensure we don't pick the same poem if there's more than one
+          if (originalData.length > 1) {
+            do {
+              nextIndex = Math.floor(Math.random() * originalData.length);
+            } while (nextIndex === currentIndex); // Keep picking until it's different from current
+          } else {
+            // Only one poem, so just play it again if loop is on.
+            nextIndex = currentIndex;
+          }
+
+
+          const nextDetails = document.querySelector(`#item-${nextIndex}`);
+          if (nextDetails) {
+            // Ensure only this one is open
+            document.querySelectorAll("details").forEach(d => d !== nextDetails && d.removeAttribute("open"));
+            nextDetails.setAttribute("open", "");
+            nextDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+            const nextRow = originalData[nextIndex];
+            currentIndex = nextIndex; // Update currentIndex for random
+            // Re-call moveControlsToFixedBar to re-initialize controls for the new poem
+            moveControlsToFixedBar(nextDetails, nextRow["Tiêu đề"], nextRow["Nội dung"], currentIndex);
+          } else {
+            // Fallback if somehow nextDetails not found (e.g., filtered data issues)
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
+          }
         } else {
-            // Autoplay is off or no more poems, clear the fixed player bar
+            // Autoplay is off, stop and clear the fixed player bar
             playerRow1Container.innerHTML = '';
             playerRow2Container.innerHTML = '';
         }
