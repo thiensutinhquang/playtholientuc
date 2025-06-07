@@ -24,7 +24,7 @@
       -webkit-font-smoothing: antialiased; /* Smooth fonts on Webkit browsers */
       -moz-osx-font-smoothing: grayscale; /* Smooth fonts on Firefox */
       /* Adjusted padding-bottom for fixed player bar height + offset */
-      padding-bottom: 110px; /* Base padding for desktop */
+      padding-bottom: 140px; /* Base padding for desktop (70px offset + ~70px bar height) */
     }
 
     /* Main container styling */
@@ -354,7 +354,7 @@
     /* Fixed Player Bar */
     .fixed-player-bar {
         position: fixed;
-        bottom: 50px; /* Raised by 50px */
+        bottom: 70px; /* Raised by 70px as requested */
         left: 0;
         width: 100%;
         background-color: #ffffff;
@@ -362,43 +362,52 @@
         padding: 10px 1rem; /* Padding for the bar itself */
         z-index: 1000; /* Ensure it stays on top */
         display: flex; /* Use flexbox for internal arrangement */
+        flex-direction: column; /* Stack rows vertically */
+        align-items: center; /* Center rows horizontally */
+        gap: 8px; /* Space between the two rows */
+    }
+
+    /* Player Row 1 - Main Controls */
+    .player-row-1 {
+        display: flex;
+        flex-wrap: nowrap; /* Forces content on one line */
+        gap: 0.75rem; /* Gap between direct children */
         align-items: center;
-        justify-content: space-between; /* Space out controls and scroll-to-top button */
+        width: 100%; /* Take full width of parent fixed-player-bar */
+        justify-content: center; /* Center controls within the row */
+        overflow-x: auto; /* Allow horizontal scrolling if too wide */
+        padding-bottom: 5px; /* Space for scrollbar on some browsers */
+
+        /* Custom scrollbar for controls if overflow-x is active */
+        scrollbar-width: thin;
+        scrollbar-color: #007bff #e9ecef;
+    }
+    .player-row-1::-webkit-scrollbar {
+        height: 5px;
+    }
+    .player-row-1::-webkit-scrollbar-track {
+        background: #e9ecef;
+        border-radius: 10px;
+    }
+    .player-row-1::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 10px;
     }
 
-    /* Speech controls styling - INSIDE FIXED BAR */
-    .speech-controls {
-      display: flex;
-      flex-wrap: nowrap; /* Forces content on one line */
-      gap: 0.75rem; /* Gap between direct children */
-      align-items: center;
-      width: auto; /* Let it shrink/grow as needed */
-      flex-grow: 1; /* Allow it to grow and take available space */
-      overflow-x: auto; /* Allow horizontal scrolling if too wide */
-      padding-bottom: 5px; /* Space for scrollbar on some browsers */
-      /* Remove margin-top, padding-top, border-top as they are now on fixed-player-bar */
-      margin-top: 0;
-      padding-top: 0;
-      border-top: none;
-
-      /* Custom scrollbar for controls if overflow-x is active */
-      scrollbar-width: thin;
-      scrollbar-color: #007bff #e9ecef;
-    }
-    .speech-controls::-webkit-scrollbar {
-      height: 5px;
-    }
-    .speech-controls::-webkit-scrollbar-track {
-      background: #e9ecef;
-      border-radius: 10px;
-    }
-    .speech-controls::-webkit-scrollbar-thumb {
-      background: #007bff;
-      border-radius: 10px;
+    /* Player Row 2 - Prev/Next and Progress */
+    .player-row-2 {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+        align-items: center;
+        width: 100%; /* Take full width of parent fixed-player-bar */
+        justify-content: center; /* Center controls within the row */
     }
 
-    /* Ensure buttons and labels don't shrink by default */
-    .speech-controls button {
+
+    /* General button styling for player controls */
+    .speech-controls button,
+    .player-row-2 button {
       flex-shrink: 0; /* Prevent buttons from shrinking too much */
       min-width: 90px; /* A reasonable minimum width for buttons */
       padding: 0.6rem 1.2rem; /* Adjusted padding for better touch target */
@@ -411,15 +420,19 @@
       transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
       box-shadow: 0 4px 12px rgba(0,123,255,0.25);
     }
-    .speech-controls button:hover {
+    .speech-controls button:hover,
+    .player-row-2 button:hover {
       background: #0056b3;
       transform: translateY(-3px); /* More pronounced lift */
       box-shadow: 0 6px 15px rgba(0,123,255,0.35);
     }
-    .speech-controls button:active {
+    .speech-controls button:active,
+    .player-row-2 button:active {
       transform: translateY(0);
       box-shadow: 0 2px 6px rgba(0,123,255,0.2);
     }
+
+    /* Specific style for auto-play (loop) button */
     .speech-controls button.active-auto {
       background: #28a745; /* Green for active autoplay */
       box-shadow: 0 4px 12px rgba(40,167,69,0.25);
@@ -428,7 +441,7 @@
       background: #218838;
     }
 
-
+    /* Styles for volume/rate labels and their sliders */
     .speech-controls label {
       display: flex;
       align-items: center;
@@ -492,7 +505,7 @@
         background: #e9ecef;
         border-radius: 4px;
         overflow: hidden;
-        margin-left: 0.75rem;
+        /* margin-left: 0.75rem; Removed for new row layout */
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
     }
     .speech-progress-bar {
@@ -518,6 +531,9 @@
         text-align: center;
         box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         margin-left: 1rem; /* Add some margin to separate it from speech controls */
+        position: absolute; /* Position relative to fixed-player-bar */
+        right: 1rem; /* Align to right */
+        bottom: 10px; /* Adjust position based on player bar height */
     }
     .scroll-to-top-button:hover {
         background: #138496;
@@ -552,7 +568,8 @@
     @media (max-width: 768px) {
       body {
         padding: 0.75rem;
-        padding-bottom: 100px; /* Adjusted padding for mobile fixed bar (50px offset + ~50px bar height) */
+        /* Adjusted padding for mobile fixed bar (70px offset + ~70px bar height) */
+        padding-bottom: 140px; 
       }
       .container {
         margin: 1rem auto;
@@ -622,16 +639,18 @@
       /* Fixed Player Bar adjustments for mobile */
       .fixed-player-bar {
         padding: 8px 0.75rem; /* Smaller padding for mobile */
-        bottom: 50px; /* Remains 50px from the bottom */
+        bottom: 70px; /* Remains 70px from the bottom */
       }
       /* Speech controls adjustments for mobile */
-      .speech-controls {
+      .speech-controls { /* This is now player-row-1 */
         gap: 0.4rem; /* Smaller gap for mobile */
-        margin-top: 0; /* Removed margin as it's now in fixed-player-bar */
-        padding-top: 0; /* Removed padding as it's now in fixed-player-bar */
         justify-content: flex-start; /* Maintain align to start */
       }
-      .speech-controls button {
+      .player-row-2 {
+          gap: 0.4rem; /* Smaller gap for mobile */
+      }
+      .speech-controls button,
+      .player-row-2 button {
           min-width: 60px;
           padding: 0.5rem 0.7rem;
       }
@@ -650,13 +669,15 @@
         padding: 0.4rem 0.6rem;
         font-size: 0.75rem;
         margin-left: 0.5rem;
+        bottom: 10px; /* Adjusted to new player bar height */
       }
     }
 
     @media (max-width: 480px) {
       body {
         padding: 0.5rem;
-        padding-bottom: 90px; /* Further adjusted padding for smallest mobile fixed bar (~50px offset + ~40px bar height) */
+        /* Further adjusted padding for smallest mobile fixed bar (~70px offset + ~60px bar height) */
+        padding-bottom: 130px;
       }
       .container {
         padding: 0.8rem;
@@ -681,7 +702,11 @@
       .speech-controls {
           gap: 0.3rem; /* Even smaller gap for very small screens */
       }
-      .speech-controls button {
+      .player-row-2 {
+          gap: 0.3rem;
+      }
+      .speech-controls button,
+      .player-row-2 button {
           min-width: 50px;
           padding: 0.4rem 0.6rem;
           font-size: 0.85em;
@@ -700,6 +725,7 @@
         padding: 0.3rem 0.5rem;
         font-size: 0.7rem;
         margin-left: 0.3rem;
+        bottom: 10px; /* Adjusted to new player bar height */
       }
     }
   </style>
@@ -740,9 +766,12 @@
 
   <!-- This is the new fixed player bar -->
   <div class="fixed-player-bar">
-    <div class="speech-controls">
+    <div class="player-row-1">
         <!-- These elements will be moved here from inside the details section dynamically -->
         <!-- They are initially empty and will be populated by JS when a poem is opened -->
+    </div>
+    <div class="player-row-2">
+        <!-- New previous/next buttons and progress bar -->
     </div>
     <button id="scroll-to-top-button" class="scroll-to-top-button">
       ⬆️<br>Top
@@ -778,7 +807,8 @@
     const searchSuggestions = document.getElementById("search-suggestions");
     const searchWrapper = document.getElementById("search-wrapper"); // New reference to the wrapper
     const searchResultCountElement = document.getElementById("search-result-count"); // New reference for result count display
-    const fixedPlayerControlsContainer = document.querySelector(".fixed-player-bar .speech-controls"); // Reference to the fixed controls container
+    const playerRow1Container = document.querySelector(".fixed-player-bar .player-row-1"); // Reference to the first row of controls
+    const playerRow2Container = document.querySelector(".fixed-player-bar .player-row-2"); // Reference to the second row of controls
     const scrollToTopButton = document.getElementById("scroll-to-top-button"); // Reference to the new scroll-to-top button
 
     // Dropdown functionality
@@ -955,16 +985,12 @@
           speechSynthesis.cancel();
           isPlaying = false;
           // Đặt lại tất cả các nút play/pause về trạng thái ban đầu
-          document.querySelectorAll('.speech-controls button').forEach(btn => {
-              // Only reset buttons in the fixed player bar, not the ones that might be dynamically created if we move them
-              // Or better, ensure only the fixed player bar has these buttons
-              if (fixedPlayerControlsContainer.contains(btn)) {
-                if (btn.innerHTML.includes("⏸️")) {
-                    btn.innerHTML = "▶️ Phát";
-                } else if (btn.innerHTML.includes("⏯️")) {
-                    btn.innerHTML = "⏯️ Phát/Dừng";
-                }
-              }
+          document.querySelectorAll('.player-row-1 button').forEach(btn => {
+            if (btn.innerHTML.includes("⏸️")) {
+                btn.innerHTML = "▶️ Phát";
+            } else if (btn.innerHTML.includes("⏯️")) {
+                btn.innerHTML = "⏯️ Phát/Dừng";
+            }
           });
 
           if (!wasOpen) { // Nếu chi tiết đang đóng (và sẽ mở ra do click)
@@ -992,7 +1018,8 @@
                  speechSynthesis.cancel(); // Stop speech when closing the active poem
                  isPlaying = false;
                  // Clear the fixed player bar
-                 fixedPlayerControlsContainer.innerHTML = '';
+                 playerRow1Container.innerHTML = '';
+                 playerRow2Container.innerHTML = '';
             }
           }
         };
@@ -1028,6 +1055,42 @@
     }
 
     /**
+     * Handles playing the previous poem.
+     */
+    function playPrevious() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            const prevPoem = originalData[currentIndex];
+            const targetDetails = document.getElementById(`item-${currentIndex}`);
+            if (targetDetails) {
+                document.querySelectorAll('details').forEach(d => d !== targetDetails && d.removeAttribute('open'));
+                targetDetails.setAttribute("open", "");
+                targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+                highlightTOC(currentIndex);
+                moveControlsToFixedBar(targetDetails, prevPoem["Tiêu đề"], prevPoem["Nội dung"], currentIndex);
+            }
+        }
+    }
+
+    /**
+     * Handles playing the next poem.
+     */
+    function playNext() {
+        if (currentIndex < originalData.length - 1) {
+            currentIndex++;
+            const nextPoem = originalData[currentIndex];
+            const targetDetails = document.getElementById(`item-${currentIndex}`);
+            if (targetDetails) {
+                document.querySelectorAll('details').forEach(d => d !== targetDetails && d.removeAttribute('open'));
+                targetDetails.setAttribute("open", "");
+                targetDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+                highlightTOC(currentIndex);
+                moveControlsToFixedBar(targetDetails, nextPoem["Tiêu đề"], nextPoem["Nội dung"], currentIndex);
+            }
+        }
+    }
+
+    /**
      * Creates and moves playback controls for a specific poem to the fixed player bar.
      * @param {HTMLElement} detailsElement - The <details> element of the poem.
      * @param {string} title - The title of the poem.
@@ -1035,13 +1098,11 @@
      * @param {number} originalIndex - The original index of the poem.
      */
     function moveControlsToFixedBar(detailsElement, title, content, originalIndex) {
-        // Clear previous controls in the fixed bar
-        fixedPlayerControlsContainer.innerHTML = '';
+        // Clear previous controls in the fixed bar rows
+        playerRow1Container.innerHTML = '';
+        playerRow2Container.innerHTML = '';
 
-        // Create new controls (similar to how they were created in renderContent)
-        const progressBar = document.createElement("div");
-        progressBar.className = "speech-progress-bar";
-
+        // --- Row 1 Controls (Existing) ---
         const btnToggle = document.createElement("button");
         btnToggle.innerHTML = "⏯️ Phát/Dừng";
         btnToggle.onclick = () => {
@@ -1051,12 +1112,12 @@
             btnToggle.innerHTML = "▶️ Phát";
           } else {
             currentIndex = originalIndex;
-            speak(title + ". " + content, progressBar, btnToggle);
+            speak(title + ". " + content, currentPlayingProgressBar, btnToggle); // Pass currentPlayingProgressBar here
           }
         };
 
         const btnAuto = document.createElement("button");
-        btnAuto.textContent = "🔁 Lặp"; /* Changed from "Nghe liên tục" to "Lặp" */
+        btnAuto.textContent = "� Lặp"; /* Changed from "Nghe liên tục" to "Lặp" */
         btnAuto.onclick = () => {
           autoPlay = !autoPlay;
           btnAuto.classList.toggle("active-auto", autoPlay);
@@ -1097,12 +1158,29 @@
         };
         rateLabel.append(rateValueSpan, rate); // Append span and input to label
 
+        // Append to row 1 container
+        playerRow1Container.append(btnToggle, btnAuto, volLabel, rateLabel);
+
+
+        // --- Row 2 Controls (New) ---
+        const btnPrev = document.createElement("button");
+        btnPrev.textContent = "⏮️ Lùi";
+        btnPrev.onclick = playPrevious;
+
+        const btnNext = document.createElement("button");
+        btnNext.textContent = "Tiến ⏭️";
+        btnNext.onclick = playNext;
+
+        const progressBar = document.createElement("div"); // Re-create progress bar here for row 2
+        progressBar.className = "speech-progress-bar";
+
         const progressWrapper = document.createElement("div");
         progressWrapper.className = "speech-progress";
         progressWrapper.appendChild(progressBar);
 
-        // Append to the fixed bar's controls container
-        fixedPlayerControlsContainer.append(btnToggle, btnAuto, volLabel, rateLabel, progressWrapper);
+        // Append to row 2 container
+        playerRow2Container.append(btnPrev, progressWrapper, btnNext);
+
 
         // Start speaking the poem
         currentIndex = originalIndex;
@@ -1141,8 +1219,8 @@
         if (currentPlayingToggleButton) {
             currentPlayingToggleButton.innerHTML = "⏸️ Dừng";
         }
-        if (progressBar) {
-          progressBar.style.width = "0%"; // Đặt lại thanh tiến trình về 0
+        if (currentPlayingProgressBar) { /* Use currentPlayingProgressBar */
+          currentPlayingProgressBar.style.width = "0%"; // Đặt lại thanh tiến trình về 0
           // Ước tính thời lượng dựa trên độ dài văn bản và tốc độ
           let duration = text.length / currentRate / 15; // 15 là một giá trị ước tính ký tự/giây
           let start = Date.now(); // Thời điểm bắt đầu phát
@@ -1151,7 +1229,7 @@
           progressInterval = setInterval(() => {
             let elapsed = (Date.now() - start) / 1000; // Thời gian đã trôi qua (giây)
             let percent = Math.min(100, (elapsed / duration) * 100); // Tính phần trăm
-            progressBar.style.width = percent + "%";
+            currentPlayingProgressBar.style.width = percent + "%"; /* Use currentPlayingProgressBar */
           }, 100); // Cập nhật mỗi 100ms
         }
       };
@@ -1163,7 +1241,7 @@
         if (currentPlayingToggleButton) {
             currentPlayingToggleButton.innerHTML = "▶️ Phát";
         }
-        if (progressBar) progressBar.style.width = "100%"; // Đảm bảo thanh tiến trình đầy
+        if (currentPlayingProgressBar) currentPlayingProgressBar.style.width = "100%"; /* Use currentPlayingProgressBar */
         if (progressInterval) clearInterval(progressInterval); // Xóa interval
 
         // Xóa ngữ cảnh đang phát
@@ -1172,26 +1250,12 @@
         currentPlayingToggleButton = null;
 
         // Nếu chế độ tự động phát đang bật và còn bài thơ tiếp theo
-        if (autoPlay && currentIndex + 1 < originalData.length) {
-          const nextDetails = document.querySelector(`#item-${currentIndex + 1}`); // Lấy thẻ details của bài thơ tiếp theo
-          if (nextDetails) {
-            nextDetails.setAttribute("open", ""); // Mở thẻ details của bài tiếp theo
-            // Đóng tất cả các thẻ details khác
-            document.querySelectorAll("details").forEach(d => d !== nextDetails && d.removeAttribute("open"));
-            nextDetails.scrollIntoView({ behavior: "smooth", block: "start" }); // Cuộn mượt đến bài thơ tiếp theo
-            const nextRow = originalData[currentIndex + 1]; // Lấy dữ liệu bài thơ tiếp theo
-            currentIndex += 1; // Tăng chỉ số bài thơ
-            
-            // Call moveControlsToFixedBar for the next poem
-            moveControlsToFixedBar(nextDetails, nextRow["Tiêu đề"], nextRow["Nội dung"], currentIndex);
-
-          } else {
-            // No more poems to autoplay, clear the fixed player bar
-            fixedPlayerControlsContainer.innerHTML = '';
-          }
+        if (autoPlay) {
+          playNext(); // Use the playNext function for consistent behavior
         } else {
             // Autoplay is off or no more poems, clear the fixed player bar
-            fixedPlayerControlsContainer.innerHTML = '';
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
         }
       };
 
@@ -1270,7 +1334,8 @@
         displaySuggestions([]); // Clear and hide suggestions
         // Also clear the fixed player bar if no search results and no current poem
         if (currentIndex === -1 || !isPlaying) {
-            fixedPlayerControlsContainer.innerHTML = '';
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
         }
         return;
       }
@@ -1313,7 +1378,8 @@
             speechSynthesis.cancel(); // Stop any ongoing speech
             isPlaying = false;
             // Clear the fixed player bar if no results
-            fixedPlayerControlsContainer.innerHTML = '';
+            playerRow1Container.innerHTML = '';
+            playerRow2Container.innerHTML = '';
           }
       } else {
           console.warn("Fuse.js not initialized. Search functionality is disabled.");
@@ -1321,7 +1387,8 @@
           searchResultCountElement.style.display = 'block';
           // Render original content if search is disabled
           renderContent(originalData);
-          fixedPlayerControlsContainer.innerHTML = ''; // Also clear fixed player if search is disabled
+          playerRow1Container.innerHTML = '';
+          playerRow2Container.innerHTML = '';
       }
     });
 
@@ -1352,3 +1419,4 @@
   </script>
 </body>
 </html>
+�
