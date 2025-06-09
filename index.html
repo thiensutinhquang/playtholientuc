@@ -212,7 +212,7 @@
     .toc {
       display: flex;
       overflow-x: auto;
-      gap: 0.6rem; /* GIẢM: Khoảng cách giữa các mục */
+      gap: 0.3rem; /* GIẢM THÊM: Khoảng cách giữa các mục */
       padding-bottom: 0.8rem; /* Thêm khoảng trống cho thanh cuộn */
       margin-bottom: 1.5rem;
       scrollbar-width: thin; /* HIỂN THỊ: Thanh cuộn cho Firefox */
@@ -232,18 +232,18 @@
 
     .toc a {
       flex-shrink: 0;
-      padding: 0.35rem 0.8rem; /* GIẢM: Padding để mục nhỏ gọn hơn */
+      padding: 0.2rem 0.5rem; /* GIẢM THÊM: Padding tối đa */
       border-radius: 20px;
       text-decoration: none;
       color: var(--text-color-secondary);
-      font-size: 0.8rem; /* GIẢM: Cỡ chữ */
+      font-size: 0.7rem; /* GIẢM THÊM: Cỡ chữ tối đa */
       font-weight: 500;
       white-space: nowrap;
       transition: all 0.2s ease-in-out;
       background: var(--element-bg);
       box-shadow:
-        4px 4px 8px var(--shadow-dark),
-        -4px -4px 8px var(--shadow-light);
+        3px 3px 6px var(--shadow-dark), /* Giảm nhẹ bóng đổ */
+        -3px -3px 6px var(--shadow-light);
     }
     .toc a:hover {
       color: var(--text-color-primary);
@@ -251,13 +251,13 @@
     .toc a.active {
       color: var(--accent-color);
       box-shadow: 
-        inset 3px 3px 6px var(--shadow-dark),
-        inset -3px -3px 6px var(--shadow-light);
+        inset 2px 2px 4px var(--shadow-dark),
+        inset -2px -2px 4px var(--shadow-light);
     }
 
     /* === CẬP NHẬT: Kiểu của mục Accordion === */
     details {
-      margin: 0.75rem 0; /* GIẢM: Khoảng cách giữa các bài thơ */
+      margin: 0.35rem 0; /* GIẢM THÊM: Khoảng cách giữa các bài thơ */
       border-radius: var(--border-radius-small);
       overflow: hidden;
       transition: all 0.3s ease;
@@ -274,11 +274,11 @@
     
     summary {
       cursor: pointer;
-      padding: 0.8rem 1.2rem 0.8rem 2.5rem; /* GIẢM: Padding để tiêu đề gọn hơn */
+      padding: 0.5rem 1rem 0.5rem 2rem; /* GIẢM THÊM: Padding tối đa */
       list-style: none;
       position: relative;
-      font-weight: 600;
-      font-size: 1rem; /* GIẢM: Cỡ chữ tiêu đề */
+      font-weight: 500;
+      font-size: 0.9rem; /* GIẢM THÊM: Cỡ chữ tiêu đề tối đa */
       color: var(--text-color-primary);
       transition: all 0.3s ease;
     }
@@ -290,11 +290,11 @@
     summary::before {
       content: '►';
       position: absolute;
-      left: 1rem; /* Điều chỉnh vị trí icon mũi tên */
+      left: 0.7rem; /* Điều chỉnh vị trí icon mũi tên */
       top: 50%;
       transform: translateY(-50%) rotate(0deg);
       transition: transform 0.2s ease, color 0.3s ease;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: var(--text-color-secondary);
     }
     details[open] summary::before {
@@ -1125,16 +1125,35 @@
       loopBtn.classList.toggle("active-auto", autoPlay);
     });
 
+    // CẬP NHẬT: Sự kiện cho thanh trượt âm lượng và tốc độ
     volumeSlider.addEventListener('input', (e) => {
-      const vol = parseFloat(e.target.value);
-      volumeValue.textContent = Math.round(vol * 10);
-      if (currentUtterance) currentUtterance.volume = vol;
+      volumeValue.textContent = Math.round(parseFloat(e.target.value) * 10);
+      // Nếu có bài thơ đang được chọn (đang phát hoặc tạm dừng)
+      if (currentIndex !== -1) {
+        const wasSpeaking = speechSynthesis.speaking;
+        const poem = originalData[currentIndex];
+        // Chuẩn bị lại lời nói với cài đặt mới. preparePlayback() sẽ tự động gọi stop().
+        preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
+        // Nếu trước đó đang phát, hãy phát lại. Nếu không, nó sẽ vẫn ở trạng thái chuẩn bị (tạm dừng).
+        if (wasSpeaking) {
+          play();
+        }
+      }
     });
 
     rateSlider.addEventListener('input', (e) => {
-      const rate = parseFloat(e.target.value);
-      rateValue.textContent = `${rate.toFixed(1)}x`;
-      if (currentUtterance) currentUtterance.rate = rate;
+      rateValue.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
+      // Nếu có bài thơ đang được chọn (đang phát hoặc tạm dừng)
+      if (currentIndex !== -1) {
+        const wasSpeaking = speechSynthesis.speaking;
+        const poem = originalData[currentIndex];
+        // Chuẩn bị lại lời nói với cài đặt mới.
+        preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
+        // Nếu trước đó đang phát, hãy phát lại.
+        if (wasSpeaking) {
+          play();
+        }
+      }
     });
 
     // Tìm kiếm
