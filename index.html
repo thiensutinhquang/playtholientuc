@@ -148,10 +148,17 @@
     }
     .dropdown.active .dropdown-menu { display: block; }
 
-    /* Ô tìm kiếm - Kiểu "lõm" Neumorphic */
-    #search-wrapper { position: relative; margin: 1.5rem 0; }
+    /* === CẬP NHẬT: Ô tìm kiếm - Kiểu "lõm" Neumorphic === */
+    #search-wrapper {
+      position: relative;
+      margin: 1.5rem 0;
+      display: flex; /* Dùng flexbox để sắp xếp */
+      align-items: center;
+      gap: 0.75rem; /* Khoảng cách giữa ô tìm kiếm và nút micro */
+    }
     #search {
       width: 100%;
+      flex-grow: 1; /* Cho phép ô tìm kiếm chiếm hết không gian còn lại */
       padding: 1rem 1.5rem;
       font-size: 1rem;
       border-radius: 50px;
@@ -171,6 +178,37 @@
         inset 3px 3px 6px var(--shadow-dark),
         inset -3px -3px 6px var(--shadow-light),
         0 0 0 2px var(--accent-color); /* Vòng sáng khi focus */
+    }
+    
+    /* === THÊM MỚI: Nút tìm kiếm bằng giọng nói === */
+    #voice-search-btn {
+      flex-shrink: 0; /* Không cho nút bị co lại */
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      background: var(--element-bg);
+      color: var(--text-color-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+    }
+    #voice-search-btn:hover {
+      color: var(--accent-color);
+    }
+    #voice-search-btn:active, #voice-search-btn.listening {
+      color: #fff;
+      background: var(--accent-color);
+      box-shadow: 
+        inset 3px 3px 6px #0076b8,
+        inset -3px -3px 6px #00daff,
+        0 0 15px var(--accent-color);
     }
     
     #search-suggestions {
@@ -610,7 +648,7 @@
     
     <div id="search-wrapper">
         <input type="text" id="search" placeholder="Tìm kiếm theo tiêu đề hoặc nội dung..." autocomplete="off"/>
-        <ul id="search-suggestions"></ul>
+        <button id="voice-search-btn" title="Tìm kiếm bằng giọng nói">🎤</button>
     </div>
     <p id="search-result-count"></p>
     <div class="toc" id="toc">Đang tải dữ liệu...</div>
@@ -661,554 +699,567 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
 
   <script>
-    // URL của Google Sheet đã xuất bản dưới dạng CSV
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjl66tsHr053yFDCTxSKViC0G24MNzmaW7ofFMMSMJVwHBOslw6usujYUvcDnnymA7ZFbL1BZ6QEYf/pub?output=csv";
-    let originalData = []; // Lưu trữ dữ liệu gốc từ Google Sheet
-    let fuse = null; // Đối tượng Fuse.js để tìm kiếm mờ
-    let currentUtterance = null; // Đối tượng SpeechSynthesisUtterance hiện tại
-    let isPlaying = false; // Trạng thái phát (đang phát/dừng)
-    let progressInterval = null; // ID của interval cho thanh tiến trình
-    let currentIndex = -1; // Chỉ mục của bài thơ đang được chọn
-    let autoPlay = true; // CẬP NHẬT: Lặp lại được bật làm mặc định
-    
-    // --- THAM CHIẾU ĐẾN CÁC PHẦN TỬ DOM ---
-    const searchInput = document.getElementById("search");
-    const searchSuggestions = document.getElementById("search-suggestions");
-    const searchResultCountElement = document.getElementById("search-result-count");
-    const tocContainer = document.getElementById("toc");
-    const accordionContainer = document.getElementById("accordion");
-    const fallbackElement = document.getElementById("fallback");
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    
-    // Các nút điều khiển
-    const playPauseBtn = document.getElementById("play-pause-btn");
-    const prevBtn = document.getElementById("prev-btn");
-    const nextBtn = document.getElementById("next-btn");
-    const loopBtn = document.getElementById("loop-btn");
-    const volumeSlider = document.getElementById("volume-slider");
-    const volumeValue = document.getElementById("volume-value");
-    const rateSlider = document.getElementById("rate-slider");
-    const rateValue = document.getElementById("rate-value");
-    const progressBar = document.querySelector(".speech-progress-bar");
-    const scrollToTopButton = document.getElementById("scroll-to-top-button");
-
-    // === THÊM MỚI: Tham chiếu Modal ===
-    const shareModalOverlay = document.getElementById("share-modal-overlay");
-    const shareModalCloseBtn = document.getElementById("share-modal-close-btn");
-
-    /**
-     * Hàm trợ giúp để loại bỏ dấu tiếng Việt và chuyển về chữ thường.
-     * @param {string} str - Chuỗi đầu vào.
-     * @returns {string} Chuỗi đã được chuẩn hóa.
-     */
-    function removeVietnameseAccents(str) {
-      if (!str) return '';
-      str = str.toLowerCase();
-      str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
-      str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
-      str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
-      str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
-      str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
-      str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
-      str = str.replace(/đ/g, "d");
-      return str;
-    }
-
-    /**
-     * Khởi tạo chỉ mục Fuse.js để tìm kiếm mờ.
-     * @param {Array} data - Tập dữ liệu để lập chỉ mục.
-     */
-    function createFuseIndex(data) {
-      fuse = new Fuse(data, {
-        keys: [
-          { name: "Tiêu đề", weight: 0.7 },
-          { name: "searchable_content", weight: 0.3 }
-        ],
-        threshold: 0.4,
-        distance: 200,
-        includeScore: true,
-      });
-    }
-
-    /**
-     * Tải và phân tích dữ liệu từ Google Sheet.
-     */
-    async function loadData() {
-      try {
-        const response = await fetch(SHEET_URL);
-        const csv = await response.text();
-        const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+    // SỬA LỖI: Bọc toàn bộ mã trong DOMContentLoaded để đảm bảo HTML được tải xong trước khi JS chạy
+    document.addEventListener('DOMContentLoaded', () => {
+        // URL của Google Sheet đã xuất bản dưới dạng CSV
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjl66tsHr053yFDCTxSKViC0G24MNzmaW7ofFMMSMJVwHBOslw6usujYUvcDnnymA7ZFbL1BZ6QEYf/pub?output=csv";
+        let originalData = []; // Lưu trữ dữ liệu gốc từ Google Sheet
+        let displayData = []; // SỬA LỖI: Dữ liệu đang được hiển thị (có thể là kết quả tìm kiếm)
+        let fuse = null; // Đối tượng Fuse.js để tìm kiếm mờ
+        let currentUtterance = null; // Đối tượng SpeechSynthesisUtterance hiện tại
+        let isPlaying = false; // Trạng thái phát (đang phát/dừng)
+        let progressInterval = null; // ID của interval cho thanh tiến trình
+        let currentIndex = -1; // Chỉ mục của bài thơ đang được chọn trong originalData
+        let autoPlay = true; // CẬP NHẬT: Lặp lại được bật làm mặc định
         
-        originalData = data
-          .filter(row => row["Tiêu đề"] || row["Nội dung"])
-          .map(row => ({
-            ...row,
-            searchable_content: removeVietnameseAccents(row["Nội dung"])
-          }));
-
-        createFuseIndex(originalData);
-        renderContent(originalData);
+        // --- THAM CHIẾU ĐẾN CÁC PHẦN TỬ DOM ---
+        const searchInput = document.getElementById("search");
+        const voiceSearchBtn = document.getElementById("voice-search-btn");
+        const searchSuggestions = document.getElementById("search-suggestions");
+        const searchResultCountElement = document.getElementById("search-result-count");
+        const tocContainer = document.getElementById("toc");
+        const accordionContainer = document.getElementById("accordion");
+        const fallbackElement = document.getElementById("fallback");
+        const dropdownToggle = document.querySelector('.dropdown-toggle');
         
-        // CẬP NHẬT: Đặt trạng thái sáng cho nút lặp khi tải trang
-        loopBtn.classList.toggle("active-auto", autoPlay);
-        
-      } catch (e) {
-        console.error("Lỗi khi tải dữ liệu:", e);
-        tocContainer.style.display = "none";
-        accordionContainer.style.display = "none";
-        fallbackElement.style.display = "block";
-        searchInput.disabled = true;
-        searchInput.placeholder = "Tìm kiếm không khả dụng";
-      }
-    }
+        // Các nút điều khiển
+        const playPauseBtn = document.getElementById("play-pause-btn");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const loopBtn = document.getElementById("loop-btn");
+        const volumeSlider = document.getElementById("volume-slider");
+        const volumeValue = document.getElementById("volume-value");
+        const rateSlider = document.getElementById("rate-slider");
+        const rateValue = document.getElementById("rate-value");
+        const progressBar = document.querySelector(".speech-progress-bar");
+        const scrollToTopButton = document.getElementById("scroll-to-top-button");
 
-    /**
-     * Đánh dấu (highlight) một từ khóa trong văn bản.
-     * @param {string} text - Văn bản gốc.
-     * @param {string} keyword - Từ khóa cần đánh dấu.
-     * @returns {string} Văn bản dạng HTML với từ khóa đã được đánh dấu.
-     */
-    function highlightKeyword(text, keyword) {
-      if (!text || !keyword) return text;
-      
-      const normalizedKeyword = removeVietnameseAccents(keyword.trim());
-      if (!normalizedKeyword) return text;
+        // === THÊM MỚI: Tham chiếu Modal ===
+        const shareModalOverlay = document.getElementById("share-modal-overlay");
+        const shareModalCloseBtn = document.getElementById("share-modal-close-btn");
 
-      const escapedKeyword = normalizedKeyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const pattern = new RegExp(escapedKeyword, 'gi');
-      const normalizedText = removeVietnameseAccents(text);
-      
-      let result = "";
-      let lastIndex = 0;
-      let match;
-
-      while ((match = pattern.exec(normalizedText)) !== null) {
-          const start = match.index;
-          const end = start + match[0].length;
-          result += text.substring(lastIndex, start);
-          result += `<mark class="highlight">${text.substring(start, end)}</mark>`;
-          lastIndex = end;
-      }
-      result += text.substring(lastIndex);
-      return result;
-    }
-    
-    /**
-     * Hiển thị các bài thơ lên DOM.
-     * @param {Array} displayData - Mảng các đối tượng bài thơ cần hiển thị.
-     */
-    function renderContent(displayData) {
-      tocContainer.innerHTML = '';
-      accordionContainer.innerHTML = '';
-
-      const keyword = searchInput.value.trim();
-
-      if (displayData.length === 0 && keyword) {
-        accordionContainer.innerHTML = '<p style="text-align: center; color: var(--text-color-secondary);">Không tìm thấy kết quả nào.</p>';
-        searchResultCountElement.textContent = "Không tìm thấy kết quả nào.";
-        return;
-      }
-
-      displayData.forEach((row) => {
-        const originalIndex = originalData.findIndex(item => item === row);
-        if(originalIndex === -1) return;
-
-        const title = row["Tiêu đề"] || `Bài ${originalIndex + 1}`;
-        const content = row["Nội dung"] || "";
-        const image = row["Ảnh"] || "";
-
-        const displayTitle = highlightKeyword(title, keyword);
-        const displayContent = highlightKeyword(content.replace(/\n/g, "<br>"), keyword);
-
-        // Tạo mục Accordion
-        const details = document.createElement("details");
-        details.id = `item-${originalIndex}`;
-        details.onclick = (e) => handleDetailsClick(e, details, title, content, originalIndex);
-
-        const summary = document.createElement("summary");
-        summary.innerHTML = displayTitle;
-
-        const body = document.createElement("div");
-        body.className = "content-body";
-        body.innerHTML = displayContent + (image ? `<img src="${image}" onerror="this.style.display='none';">` : "");
-
-        // === THÊM MỚI: Tạo Nút Chia sẻ ===
-        const shareContainer = document.createElement('div');
-        shareContainer.className = 'share-button-container';
-        const shareBtn = document.createElement('button');
-        shareBtn.className = 'share-btn';
-        shareBtn.textContent = '🔗 Chia sẻ lời thơ';
-        shareBtn.onclick = (e) => {
-            e.stopPropagation(); // Ngăn sự kiện click lan ra phần tử details
-            const textToCopy = `${title}\n\n${content}`;
-            copyToClipboard(textToCopy);
-        };
-        shareContainer.appendChild(shareBtn);
-        body.appendChild(shareContainer);
-
-        details.append(summary, body);
-        accordionContainer.appendChild(details);
-
-        // Tạo liên kết trong Mục lục (TOC)
-        const link = document.createElement("a");
-        link.href = `#item-${originalIndex}`;
-        link.innerHTML = title; // Không đánh dấu trong TOC để giao diện sạch sẽ
-        link.onclick = (e) => handleTocClick(e, originalIndex, title, content);
-        tocContainer.appendChild(link);
-      });
-    }
-
-    /**
-     * Xử lý sự kiện nhấn vào các mục accordion (<details>).
-     */
-    function handleDetailsClick(e, details, title, content, index) {
-      e.preventDefault();
-      const wasOpen = details.hasAttribute('open');
-
-      if (!wasOpen) {
-        openPoem(index, title, content);
-      } else {
-        closePoem(index);
-      }
-    }
-    
-    /**
-     * Xử lý sự kiện nhấn vào các liên kết trong TOC.
-     */
-    function handleTocClick(e, index, title, content) {
-        e.preventDefault();
-        openPoem(index, title, content);
-        const targetDetails = document.getElementById(`item-${index}`);
-        if(targetDetails) {
-            targetDetails.scrollIntoView({ behavior: "smooth", block: "center" });
+        /**
+         * Hàm trợ giúp để loại bỏ dấu tiếng Việt và chuyển về chữ thường.
+         * @param {string} str - Chuỗi đầu vào.
+         * @returns {string} Chuỗi đã được chuẩn hóa.
+         */
+        function removeVietnameseAccents(str) {
+            if (!str) return '';
+            str = str.toLowerCase();
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+            str = str.replace(/đ/g, "d");
+            return str;
         }
-    }
-    
-    /**
-     * Mở một bài thơ cụ thể và chuẩn bị để phát.
-     */
-    function openPoem(index, title, content) {
-        document.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));
-        const targetDetails = document.getElementById(`item-${index}`);
-        if (targetDetails) {
-            targetDetails.setAttribute('open', '');
+
+        /**
+         * Khởi tạo chỉ mục Fuse.js để tìm kiếm mờ.
+         * @param {Array} data - Tập dữ liệu để lập chỉ mục.
+         */
+        function createFuseIndex(data) {
+            fuse = new Fuse(data, {
+                keys: [
+                    { name: "Tiêu đề", weight: 0.7 },
+                    { name: "searchable_content", weight: 0.3 }
+                ],
+                threshold: 0.4,
+                distance: 200,
+                includeScore: true,
+            });
+        }
+
+        /**
+         * Tải và phân tích dữ liệu từ Google Sheet.
+         */
+        async function loadData() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const csv = await response.text();
+                const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+                
+                originalData = data
+                    .filter(row => row["Tiêu đề"] || row["Nội dung"])
+                    .map(row => ({
+                        ...row,
+                        searchable_content: removeVietnameseAccents(row["Nội dung"])
+                    }));
+
+                createFuseIndex(originalData);
+                displayData = originalData; // SỬA LỖI: Khởi tạo displayData
+                renderContent(displayData);
+                
+                loopBtn.classList.toggle("active-auto", autoPlay);
+                
+            } catch (e) {
+                console.error("Lỗi khi tải dữ liệu:", e);
+                if (tocContainer) tocContainer.style.display = "none";
+                if (accordionContainer) accordionContainer.style.display = "none";
+                if (fallbackElement) fallbackElement.style.display = "block";
+                if (searchInput) {
+                    searchInput.disabled = true;
+                    searchInput.placeholder = "Tìm kiếm không khả dụng";
+                }
+            }
+        }
+
+        /**
+         * Đánh dấu (highlight) một từ khóa trong văn bản.
+         * @param {string} text - Văn bản gốc.
+         * @param {string} keyword - Từ khóa cần đánh dấu.
+         * @returns {string} Văn bản dạng HTML với từ khóa đã được đánh dấu.
+         */
+        function highlightKeyword(text, keyword) {
+            if (!text || !keyword) return text;
+            const normalizedKeyword = removeVietnameseAccents(keyword.trim());
+            if (!normalizedKeyword) return text;
+            const escapedKeyword = normalizedKeyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const pattern = new RegExp(escapedKeyword, 'gi');
+            const normalizedText = removeVietnameseAccents(text);
+            
+            let result = "";
+            let lastIndex = 0;
+            let match;
+
+            while ((match = pattern.exec(normalizedText)) !== null) {
+                const start = match.index;
+                const end = start + match[0].length;
+                result += text.substring(lastIndex, start);
+                result += `<mark class="highlight">${text.substring(start, end)}</mark>`;
+                lastIndex = end;
+            }
+            result += text.substring(lastIndex);
+            return result;
         }
         
-        highlightTOC(index);
-        currentIndex = index;
-        
-        // CẬP NHẬT: Đảm bảo trạng thái nút lặp luôn được đồng bộ hóa
-        loopBtn.classList.toggle("active-auto", autoPlay);
-        
-        preparePlayback(title, content);
-        play();
-    }
+        /**
+         * Hiển thị các bài thơ lên DOM.
+         * @param {Array} dataToRender - Mảng các đối tượng bài thơ cần hiển thị.
+         */
+        function renderContent(dataToRender) {
+            if (!tocContainer || !accordionContainer) return; // SỬA LỖI: Thêm kiểm tra null
+            tocContainer.innerHTML = '';
+            accordionContainer.innerHTML = '';
+            const keyword = searchInput.value.trim();
 
-    /**
-     * Đóng bài thơ đang mở và dừng phát.
-     */
-    function closePoem(index) {
-        const targetDetails = document.getElementById(`item-${index}`);
-        if (targetDetails) {
-            targetDetails.removeAttribute('open');
+            if (dataToRender.length === 0 && keyword) {
+                accordionContainer.innerHTML = '<p style="text-align: center; color: var(--text-color-secondary);">Không tìm thấy kết quả nào.</p>';
+                if(searchResultCountElement) searchResultCountElement.textContent = "Không tìm thấy kết quả nào.";
+                return;
+            }
+
+            dataToRender.forEach((row) => {
+                const originalIndex = originalData.findIndex(item => item === row);
+                if(originalIndex === -1) return;
+
+                const title = row["Tiêu đề"] || `Bài ${originalIndex + 1}`;
+                const content = row["Nội dung"] || "";
+                const image = row["Ảnh"] || "";
+
+                const displayTitle = highlightKeyword(title, keyword);
+                const displayContent = highlightKeyword(content.replace(/\n/g, "<br>"), keyword);
+                const details = document.createElement("details");
+                details.id = `item-${originalIndex}`;
+                details.onclick = (e) => handleDetailsClick(e, details, title, content, originalIndex);
+
+                const summary = document.createElement("summary");
+                summary.innerHTML = displayTitle;
+                const body = document.createElement("div");
+                body.className = "content-body";
+                body.innerHTML = displayContent + (image ? `<img src="${image}" onerror="this.style.display='none';">` : "");
+
+                const shareContainer = document.createElement('div');
+                shareContainer.className = 'share-button-container';
+                const shareBtn = document.createElement('button');
+                shareBtn.className = 'share-btn';
+                shareBtn.textContent = '🔗 Chia sẻ lời thơ';
+                shareBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const textToCopy = `${title}\n\n${content}`;
+                    copyToClipboard(textToCopy);
+                };
+                shareContainer.appendChild(shareBtn);
+                body.appendChild(shareContainer);
+                details.append(summary, body);
+                accordionContainer.appendChild(details);
+
+                const link = document.createElement("a");
+                link.href = `#item-${originalIndex}`;
+                link.innerHTML = title;
+                link.dataset.originalIndex = originalIndex; // SỬA LỖI: Sử dụng dataset để lưu trữ index
+                link.onclick = (e) => handleTocClick(e, originalIndex, title, content);
+                tocContainer.appendChild(link);
+            });
         }
-        highlightTOC(-1);
-        if(currentIndex === index) {
+
+        /**
+         * Xử lý sự kiện nhấn vào các mục accordion (<details>).
+         */
+        function handleDetailsClick(e, details, title, content, index) {
+            e.preventDefault();
+            const wasOpen = details.hasAttribute('open');
+            if (!wasOpen) {
+                openPoem(index, title, content);
+            } else {
+                closePoem(index);
+            }
+        }
+        
+        /**
+         * Xử lý sự kiện nhấn vào các liên kết trong TOC.
+         */
+        function handleTocClick(e, index, title, content) {
+            e.preventDefault();
+            openPoem(index, title, content);
+            const targetDetails = document.getElementById(`item-${index}`);
+            if(targetDetails) {
+                targetDetails.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+        
+        /**
+         * Mở một bài thơ cụ thể và chuẩn bị để phát.
+         */
+        function openPoem(index, title, content) {
+            document.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));
+            const targetDetails = document.getElementById(`item-${index}`);
+            if (targetDetails) {
+                targetDetails.setAttribute('open', '');
+            }
+            highlightTOC(index);
+            currentIndex = index;
+            if (loopBtn) loopBtn.classList.toggle("active-auto", autoPlay);
+            preparePlayback(title, content);
+            play();
+        }
+
+        /**
+         * Đóng bài thơ đang mở và dừng phát.
+         */
+        function closePoem(index) {
+            const targetDetails = document.getElementById(`item-${index}`);
+            if (targetDetails) {
+                targetDetails.removeAttribute('open');
+            }
+            highlightTOC(-1);
+            if(currentIndex === index) {
+                stop();
+                currentIndex = -1;
+            }
+        }
+
+        /**
+         * Chuẩn bị văn bản để tổng hợp giọng nói mà không phát ngay lập tức.
+         */
+        function preparePlayback(title, content) {
             stop();
-            currentIndex = -1;
-        }
-    }
+            const textToSpeak = `${title}. ${content}`;
+            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+            const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("vi")) || speechSynthesis.getVoices()[0];
+            if (voice) currentUtterance.voice = voice;
+            
+            if (volumeSlider) currentUtterance.volume = parseFloat(volumeSlider.value);
+            if (rateSlider) currentUtterance.rate = parseFloat(rateSlider.value);
 
-    /**
-     * Chuẩn bị văn bản để tổng hợp giọng nói mà không phát ngay lập tức.
-     */
-    function preparePlayback(title, content) {
-      stop(); // Dừng mọi lời nói hiện tại
-      const textToSpeak = `${title}. ${content}`;
-      currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-      const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("vi")) || speechSynthesis.getVoices()[0];
-      if (voice) currentUtterance.voice = voice;
-      
-      currentUtterance.volume = parseFloat(volumeSlider.value);
-      currentUtterance.rate = parseFloat(rateSlider.value);
-
-      currentUtterance.onstart = () => {
-        isPlaying = true;
-        playPauseBtn.textContent = '⏸️';
-        // Ước tính thời lượng cho thanh tiến trình
-        const estimatedDuration = (textToSpeak.length / (currentUtterance.rate * 15)) * 1000;
-        let startTime = Date.now();
-        if(progressInterval) clearInterval(progressInterval);
-        progressInterval = setInterval(() => {
-          let elapsed = Date.now() - startTime;
-          let progress = Math.min(100, (elapsed / estimatedDuration) * 100);
-          progressBar.style.width = `${progress}%`;
-        }, 100);
-      };
-      
-      currentUtterance.onend = () => {
-        if (progressInterval) clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        if (autoPlay) {
-          playRandom(); // CẬP NHẬT: Gọi hàm phát ngẫu nhiên
-        } else {
-          stop(false); // Dừng mà không hủy lời nói (vì đã kết thúc)
-        }
-      };
-    }
-
-    // --- CÁC HÀM ĐIỀU KHIỂN PHÁT ---
-    function play() {
-      if (!currentUtterance) return;
-      speechSynthesis.speak(currentUtterance);
-    }
-    
-    function pause() {
-        speechSynthesis.pause();
-        isPlaying = false;
-        playPauseBtn.textContent = '▶️';
-        if (progressInterval) clearInterval(progressInterval);
-    }
-    
-    function resume() {
-        speechSynthesis.resume();
-        isPlaying = true;
-        playPauseBtn.textContent = '⏸️';
-    }
-    
-    function stop(cancelSpeech = true) {
-      if(cancelSpeech) speechSynthesis.cancel();
-      isPlaying = false;
-      playPauseBtn.textContent = '▶️';
-      if (progressInterval) clearInterval(progressInterval);
-      progressBar.style.width = '0%';
-    }
-    
-    /**
-     * CẬP NHẬT: Hàm mới để phát một bài thơ ngẫu nhiên
-     */
-    function playRandom() {
-        if (originalData.length === 0) return;
-        let nextIndex;
-        // Đảm bảo không phát lại cùng một bài nếu có nhiều hơn một bài
-        if (originalData.length > 1) {
-            do {
-                nextIndex = Math.floor(Math.random() * originalData.length);
-            } while (nextIndex === currentIndex);
-        } else {
-            nextIndex = 0; // Nếu chỉ có một bài, phát lại nó
-        }
-        const nextPoem = originalData[nextIndex];
-        openPoem(nextIndex, nextPoem["Tiêu đề"], nextPoem["Nội dung"]);
-    }
-    
-    function playNext() {
-      if (originalData.length === 0) return;
-      let nextIdx = (currentIndex + 1) % originalData.length;
-      const nextPoem = originalData[nextIdx];
-      openPoem(nextIdx, nextPoem["Tiêu đề"], nextPoem["Nội dung"]);
-    }
-    
-    function playPrevious() {
-      if (originalData.length === 0) return;
-      let prevIdx = (currentIndex - 1 + originalData.length) % originalData.length;
-      const prevPoem = originalData[prevIdx];
-      openPoem(prevIdx, prevPoem["Tiêu đề"], prevPoem["Nội dung"]);
-    }
-
-
-    /**
-     * Đánh dấu liên kết đang hoạt động trong TOC.
-     * @param {number} index - Chỉ mục của bài thơ cần đánh dấu.
-     */
-    function highlightTOC(index) {
-      document.querySelectorAll(".toc a").forEach((a, i) => {
-        const originalPoemIndex = originalData.findIndex(p => p === displayData[i]);
-        a.classList.toggle("active", i === index);
-      });
-    }
-
-    /**
-     * Hiển thị các gợi ý tìm kiếm.
-     * @param {Array} fuseResults - Kết quả từ Fuse.js.
-     */
-    function displaySuggestions(fuseResults) {
-        searchSuggestions.innerHTML = '';
-        if (fuseResults.length === 0 || searchInput.value.trim() === "") {
-            searchSuggestions.style.display = 'none';
-            return;
+            currentUtterance.onstart = () => {
+                isPlaying = true;
+                if (playPauseBtn) playPauseBtn.textContent = '⏸️';
+                const estimatedDuration = (textToSpeak.length / (currentUtterance.rate * 15)) * 1000;
+                let startTime = Date.now();
+                if(progressInterval) clearInterval(progressInterval);
+                progressInterval = setInterval(() => {
+                    let elapsed = Date.now() - startTime;
+                    let progress = Math.min(100, (elapsed / estimatedDuration) * 100);
+                    if (progressBar) progressBar.style.width = `${progress}%`;
+                }, 100);
+            };
+            
+            currentUtterance.onend = () => {
+                if (progressInterval) clearInterval(progressInterval);
+                if (progressBar) progressBar.style.width = '100%';
+                if (autoPlay) {
+                    playRandom();
+                } else {
+                    stop(false);
+                }
+            };
         }
 
-        fuseResults.slice(0, 5).forEach(({ item }) => {
-            const li = document.createElement('li');
-            li.textContent = item["Tiêu đề"];
-            li.onmousedown = () => {
-                searchInput.value = item["Tiêu đề"];
+        // --- CÁC HÀM ĐIỀU KHIỂN PHÁT ---
+        function play() {
+            if (!currentUtterance) return;
+            speechSynthesis.speak(currentUtterance);
+        }
+        
+        function pause() {
+            speechSynthesis.pause();
+            isPlaying = false;
+            if (playPauseBtn) playPauseBtn.textContent = '▶️';
+            if (progressInterval) clearInterval(progressInterval);
+        }
+        
+        function resume() {
+            speechSynthesis.resume();
+            isPlaying = true;
+            if (playPauseBtn) playPauseBtn.textContent = '⏸️';
+        }
+        
+        function stop(cancelSpeech = true) {
+            if(cancelSpeech) speechSynthesis.cancel();
+            isPlaying = false;
+            if (playPauseBtn) playPauseBtn.textContent = '▶️';
+            if (progressInterval) clearInterval(progressInterval);
+            if (progressBar) progressBar.style.width = '0%';
+        }
+        
+        function playRandom() {
+            if (originalData.length === 0) return;
+            let nextIndex;
+            if (originalData.length > 1) {
+                do {
+                    nextIndex = Math.floor(Math.random() * originalData.length);
+                } while (nextIndex === currentIndex);
+            } else {
+                nextIndex = 0;
+            }
+            const nextPoem = originalData[nextIndex];
+            openPoem(nextIndex, nextPoem["Tiêu đề"], nextPoem["Nội dung"]);
+        }
+        
+        function playNext() {
+            if (originalData.length === 0) return;
+            let nextIdx = (currentIndex + 1) % originalData.length;
+            const nextPoem = originalData[nextIdx];
+            openPoem(nextIdx, nextPoem["Tiêu đề"], nextPoem["Nội dung"]);
+        }
+        
+        function playPrevious() {
+            if (originalData.length === 0) return;
+            let prevIdx = (currentIndex - 1 + originalData.length) % originalData.length;
+            const prevPoem = originalData[prevIdx];
+            openPoem(prevIdx, prevPoem["Tiêu đề"], prevPoem["Nội dung"]);
+        }
+
+        /**
+         * Đánh dấu liên kết đang hoạt động trong TOC.
+         * @param {number} indexToHighlight - Chỉ mục của bài thơ cần đánh dấu trong originalData.
+         */
+        function highlightTOC(indexToHighlight) {
+            const tocLinks = document.querySelectorAll(".toc a");
+            tocLinks.forEach(link => {
+                if (link.dataset.originalIndex) { // SỬA LỖI: Luôn kiểm tra dataset
+                    const linkIndex = parseInt(link.dataset.originalIndex, 10);
+                    link.classList.toggle("active", linkIndex === indexToHighlight);
+                }
+            });
+        }
+
+        /**
+         * Hiển thị các gợi ý tìm kiếm.
+         * @param {Array} fuseResults - Kết quả từ Fuse.js.
+         */
+        function displaySuggestions(fuseResults) {
+            if (!searchSuggestions) return; // SỬA LỖI: Thêm kiểm tra null
+            searchSuggestions.innerHTML = '';
+            if (fuseResults.length === 0 || searchInput.value.trim() === "") {
                 searchSuggestions.style.display = 'none';
+                return;
+            }
+            fuseResults.slice(0, 5).forEach(({ item }) => {
+                const li = document.createElement('li');
+                li.textContent = item["Tiêu đề"];
+                li.onmousedown = () => {
+                    searchInput.value = item["Tiêu đề"];
+                    searchSuggestions.style.display = 'none';
+                    handleSearch();
+                };
+                searchSuggestions.appendChild(li);
+            });
+            searchSuggestions.style.display = 'block';
+        }
+
+        /**
+         * Thực hiện tìm kiếm và hiển thị kết quả.
+         */
+        function handleSearch() {
+            if (!searchInput) return; // SỬA LỖI: Thêm kiểm tra null
+            const keyword = searchInput.value.trim();
+            if (!keyword) {
+                if(searchResultCountElement) searchResultCountElement.textContent = "";
+                displayData = originalData;
+                renderContent(displayData);
+                return;
+            }
+            if (fuse) {
+                const results = fuse.search(keyword);
+                displayData = results.map(r => r.item);
+                if(searchResultCountElement) searchResultCountElement.textContent = `Tìm thấy ${displayData.length} kết quả`;
+                renderContent(displayData);
+            }
+        }
+
+        // === THÊM MỚI: Hàm sao chép và quản lý Modal ===
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.top = 0;
+            textArea.style.left = 0;
+            textArea.style.opacity = 0;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                if (shareModalOverlay) shareModalOverlay.style.display = 'flex';
+            } catch (err) {
+                console.error('Không thể sao chép văn bản: ', err);
+                alert('Rất tiếc, không thể sao chép văn bản.');
+            }
+            document.body.removeChild(textArea);
+        }
+        function closeModal() {
+            if (shareModalOverlay) shareModalOverlay.style.display = 'none';
+        }
+        
+        // --- BỘ LẮNG NGHE SỰ KIỆN ---
+        if(playPauseBtn) playPauseBtn.addEventListener('click', () => {
+            if(speechSynthesis.speaking) {
+                if (isPlaying) {
+                    pause();
+                } else {
+                    resume();
+                }
+            } else if (currentUtterance) {
+                play();
+            } else if (currentIndex !== -1) {
+                const poem = originalData[currentIndex];
+                openPoem(currentIndex, poem["Tiêu đề"], poem["Nội dung"]);
+            }
+        });
+
+        if(nextBtn) nextBtn.addEventListener('click', playNext);
+        if(prevBtn) prevBtn.addEventListener('click', playPrevious);
+
+        if(loopBtn) loopBtn.addEventListener('click', () => {
+            autoPlay = !autoPlay;
+            loopBtn.classList.toggle("active-auto", autoPlay);
+        });
+
+        if(volumeSlider) volumeSlider.addEventListener('input', (e) => {
+            if(volumeValue) volumeValue.textContent = Math.round(parseFloat(e.target.value) * 10);
+            if (currentIndex !== -1) {
+                const wasSpeaking = speechSynthesis.speaking;
+                const poem = originalData[currentIndex];
+                preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
+                if (wasSpeaking) {
+                    play();
+                }
+            }
+        });
+
+        if(rateSlider) rateSlider.addEventListener('input', (e) => {
+            if(rateValue) rateValue.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
+            if (currentIndex !== -1) {
+                const wasSpeaking = speechSynthesis.speaking;
+                const poem = originalData[currentIndex];
+                preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
+                if (wasSpeaking) {
+                    play();
+                }
+            }
+        });
+
+        if(searchInput) {
+            searchInput.addEventListener("input", handleSearch);
+            searchInput.addEventListener("keyup", (e) => {
+                if(e.key === 'Enter') {
+                    handleSearch();
+                    if(searchSuggestions) searchSuggestions.style.display = 'none';
+                }
+            });
+            searchInput.addEventListener('blur', () => {
+                setTimeout(() => { 
+                    if(searchSuggestions) searchSuggestions.style.display = 'none'; 
+                }, 150);
+            });
+        }
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition && voiceSearchBtn) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'vi-VN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            voiceSearchBtn.style.display = 'flex';
+
+            voiceSearchBtn.addEventListener('click', () => {
+                if (isPlaying || speechSynthesis.speaking) {
+                    stop();
+                }
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error("Lỗi khi bắt đầu nhận dạng giọng nói:", e);
+                }
+            });
+
+            recognition.onstart = () => {
+                voiceSearchBtn.classList.add('listening');
+                voiceSearchBtn.title = 'Đang lắng nghe...';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if(searchInput) searchInput.value = transcript;
                 handleSearch();
             };
-            searchSuggestions.appendChild(li);
-        });
-        searchSuggestions.style.display = 'block';
-    }
 
-    /**
-     * Thực hiện tìm kiếm và hiển thị kết quả.
-     */
-    let displayData = [];
-    function handleSearch() {
-        const keyword = searchInput.value.trim();
-        if (!keyword) {
-            searchResultCountElement.textContent = "";
-            displayData = originalData;
-            renderContent(originalData);
-            return;
-        }
+            recognition.onerror = (event) => {
+                console.error('Lỗi nhận dạng giọng nói:', event.error);
+                voiceSearchBtn.title = 'Lỗi! Thử lại?';
+            };
 
-        if (fuse) {
-            const results = fuse.search(keyword);
-            displayData = results.map(r => r.item);
-            searchResultCountElement.textContent = `Tìm thấy ${displayData.length} kết quả`;
-            renderContent(displayData);
-        }
-    }
-
-    // === THÊM MỚI: Hàm sao chép và quản lý Modal ===
-    function copyToClipboard(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        // Làm cho textarea vô hình
-        textArea.style.position = "fixed";
-        textArea.style.top = 0;
-        textArea.style.left = 0;
-        textArea.style.opacity = 0;
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            // Hiển thị modal thành công
-            shareModalOverlay.style.display = 'flex';
-        } catch (err) {
-            console.error('Không thể sao chép văn bản: ', err);
-            alert('Rất tiếc, không thể sao chép văn bản.'); // Thông báo dự phòng
-        }
-        document.body.removeChild(textArea);
-    }
-    function closeModal() {
-        shareModalOverlay.style.display = 'none';
-    }
-    
-    // --- BỘ LẮNG NGHE SỰ KIỆN ---
-    
-    // Các nút điều khiển
-    playPauseBtn.addEventListener('click', () => {
-        if(speechSynthesis.speaking) {
-            if (isPlaying) {
-                pause();
-            } else {
-                resume();
+            recognition.onend = () => {
+                voiceSearchBtn.classList.remove('listening');
+                voiceSearchBtn.title = 'Tìm kiếm bằng giọng nói';
+            };
+        } else {
+            if (voiceSearchBtn) {
+                voiceSearchBtn.style.display = 'none';
             }
-        } else if (currentUtterance) {
-            play();
-        } else if (currentIndex !== -1) {
-            const poem = originalData[currentIndex];
-            openPoem(currentIndex, poem["Tiêu đề"], poem["Nội dung"]);
+            console.warn('Trình duyệt này không hỗ trợ Web Speech API.');
         }
-    });
+        
+        if(dropdownToggle) dropdownToggle.addEventListener('click', () => {
+            dropdownToggle.closest('.dropdown').classList.toggle('active');
+        });
 
-    nextBtn.addEventListener('click', playNext);
-    prevBtn.addEventListener('click', playPrevious);
+        window.addEventListener('click', (event) => {
+            if (!event.target.matches('.dropdown-toggle')) {
+                document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+            }
+        });
 
-    loopBtn.addEventListener('click', () => {
-      autoPlay = !autoPlay;
-      loopBtn.classList.toggle("active-auto", autoPlay);
-    });
+        if(scrollToTopButton) scrollToTopButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        if(shareModalCloseBtn) shareModalCloseBtn.addEventListener('click', closeModal);
+        if(shareModalOverlay) shareModalOverlay.addEventListener('click', (e) => {
+            if (e.target === shareModalOverlay) {
+                closeModal();
+            }
+        });
 
-    // CẬP NHẬT: Sự kiện cho thanh trượt âm lượng và tốc độ
-    volumeSlider.addEventListener('input', (e) => {
-      volumeValue.textContent = Math.round(parseFloat(e.target.value) * 10);
-      // Nếu có bài thơ đang được chọn (đang phát hoặc tạm dừng)
-      if (currentIndex !== -1) {
-        const wasSpeaking = speechSynthesis.speaking;
-        const poem = originalData[currentIndex];
-        // Chuẩn bị lại lời nói với cài đặt mới. preparePlayback() sẽ tự động gọi stop().
-        preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
-        // Nếu trước đó đang phát, hãy phát lại. Nếu không, nó sẽ vẫn ở trạng thái chuẩn bị (tạm dừng).
-        if (wasSpeaking) {
-          play();
-        }
-      }
+        window.speechSynthesis.onvoiceschanged = () => {};
+        
+        loadData();
     });
-
-    rateSlider.addEventListener('input', (e) => {
-      rateValue.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
-      // Nếu có bài thơ đang được chọn (đang phát hoặc tạm dừng)
-      if (currentIndex !== -1) {
-        const wasSpeaking = speechSynthesis.speaking;
-        const poem = originalData[currentIndex];
-        // Chuẩn bị lại lời nói với cài đặt mới.
-        preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
-        // Nếu trước đó đang phát, hãy phát lại.
-        if (wasSpeaking) {
-          play();
-        }
-      }
-    });
-
-    // Tìm kiếm
-    searchInput.addEventListener("input", () => {
-        const keyword = searchInput.value.trim();
-        if (!keyword) {
-            handleSearch(); // Hiển thị lại tất cả nếu trống
-            displaySuggestions([]);
-            return;
-        }
-        if (fuse) {
-            const results = fuse.search(keyword);
-            displaySuggestions(results);
-        }
-    });
-    
-    searchInput.addEventListener("keyup", (e) => {
-        if(e.key === 'Enter') {
-            handleSearch();
-            searchSuggestions.style.display = 'none';
-        }
-    });
-
-    searchInput.addEventListener('blur', () => {
-        setTimeout(() => { searchSuggestions.style.display = 'none'; }, 150);
-    });
-    
-    // Giao diện khác
-    dropdownToggle.addEventListener('click', () => {
-        dropdownToggle.closest('.dropdown').classList.toggle('active');
-    });
-
-    window.addEventListener('click', (event) => {
-      if (!event.target.matches('.dropdown-toggle')) {
-        document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
-      }
-    });
-
-    scrollToTopButton.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    
-    // === THÊM MỚI: Sự kiện đóng Modal ===
-    shareModalCloseBtn.addEventListener('click', closeModal);
-    shareModalOverlay.addEventListener('click', (e) => {
-        if (e.target === shareModalOverlay) {
-            closeModal();
-        }
-    });
-
-    // Tải giọng nói khi chúng sẵn sàng
-    window.speechSynthesis.onvoiceschanged = () => {};
-
-    // Tải lần đầu
-    loadData();
   </script>
 </body>
 </html>
