@@ -197,7 +197,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 1.5rem;
+      font-size: 1.8rem; /* CẬP NHẬT: Tăng kích thước icon */
     }
     #voice-search-btn:hover {
       color: var(--accent-color);
@@ -585,14 +585,44 @@
       border-radius: 5px;
     }
     
-    .scroll-to-top-button {
-      position: fixed;
+    /* === CẬP NHẬT: Cụm nút cuộn trang === */
+    .scroll-nav-btn {
+      position: fixed; /* Đặt vị trí cố định */
       bottom: 20px;
-      right: 20px;
       z-index: 1002;
-      width: 45px;
-      height: 45px;
-      font-size: 1.2rem;
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      line-height: 1;
+      border-radius: 50%;
+      border: none;
+      background: var(--element-bg);
+      color: var(--text-color-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+    }
+    .scroll-nav-btn:hover {
+      color: var(--accent-color);
+    }
+    .scroll-nav-btn:active {
+      color: var(--accent-color);
+      box-shadow: 
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+    }
+    #scroll-to-top-button {
+      right: 20px; /* Đặt ở bên phải */
+    }
+    #scroll-to-end-button {
+      left: 20px; /* Đặt ở bên trái */
     }
 
     /* Thông báo dự phòng */
@@ -621,7 +651,9 @@
       summary { padding: 0.8rem 1rem 0.8rem 2.2rem; font-size: 1rem; }
       summary::before { left: 0.8rem; }
       .content-body { padding: 0.5rem 1rem 1rem 1rem; }
-      .scroll-to-top-button { bottom: 15px; right: 15px; width: 40px; height: 40px; font-size: 1rem;}
+      .scroll-nav-btn { width: 40px; height: 40px; font-size: 1rem;}
+      #scroll-to-top-button { right: 15px; }
+      #scroll-to-end-button { left: 15px; }
       .player-row-2 { gap: 0.5rem; } /* Khoảng cách hẹp hơn trên màn hình nhỏ nhất */
       input[type=range] { width: 60px; } /* Thu nhỏ thanh trượt hơn */
     }
@@ -648,7 +680,7 @@
     
     <div id="search-wrapper">
         <input type="text" id="search" placeholder="Tìm kiếm theo tiêu đề hoặc nội dung..." autocomplete="off"/>
-        <button id="voice-search-btn" title="Tìm kiếm bằng giọng nói">🎤</button>
+        <button id="voice-search-btn" title="Tìm kiếm bằng giọng nói">🎙️</button>
     </div>
     <p id="search-result-count"></p>
     <div class="toc" id="toc">Đang tải dữ liệu...</div>
@@ -692,7 +724,8 @@
     </div>
   </div>
 
-  <button id="scroll-to-top-button" class="scroll-to-top-button nav-button" title="Lên đầu trang">⬆️</button>
+  <button id="scroll-to-top-button" class="scroll-nav-btn" title="Lên đầu trang">▲</button>
+  <button id="scroll-to-end-button" class="scroll-nav-btn" title="Xuống cuối trang">▼</button>
 
   <!-- Thư viện -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -733,6 +766,7 @@
         const rateValue = document.getElementById("rate-value");
         const progressBar = document.querySelector(".speech-progress-bar");
         const scrollToTopButton = document.getElementById("scroll-to-top-button");
+        const scrollToEndButton = document.getElementById("scroll-to-end-button"); // CẬP NHẬT
 
         // === THÊM MỚI: Tham chiếu Modal ===
         const shareModalOverlay = document.getElementById("share-modal-overlay");
@@ -1245,8 +1279,12 @@
             }
         });
 
+        // CẬP NHẬT: Gán sự kiện cho cả 2 nút cuộn
         if(scrollToTopButton) scrollToTopButton.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        if(scrollToEndButton) scrollToEndButton.addEventListener('click', () => {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         });
         
         if(shareModalCloseBtn) shareModalCloseBtn.addEventListener('click', closeModal);
