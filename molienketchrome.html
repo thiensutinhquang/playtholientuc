@@ -4,12 +4,8 @@
   <meta charset="UTF-8">
   <title>Đang chuyển hướng…</title>
 
-  <!-- Preconnect & Preload -->
+  <!-- Preconnect để tối ưu tốc độ -->
   <link rel="preconnect" href="https://thiensutinhquang.github.io">
-  <link rel="preload" href="script.js" as="script">
-  
-  <!-- Meta-refresh fallback -->
-  <meta http-equiv="refresh" content="5;url=https://thiensutinhquang.github.io/playtholientuc/">
 
   <style>
     body {
@@ -23,13 +19,13 @@
       background: #fff;
       padding: 25px;
       margin: auto;
-      max-width: 320px;
+      max-width: 360px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
     p { margin: 0.5rem 0; }
-    button, .link-btn {
+    button, a.link-btn {
       display: block;
       width: 100%;
       margin: 0.75rem 0;
@@ -38,71 +34,95 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
     }
-    button { background: #2a5db0; color: #fff; }
-    .link-btn {
+    button {
+      background: #2a5db0;
+      color: #fff;
+    }
+    a.link-btn {
       background: transparent;
       color: #2a5db0;
       text-decoration: underline;
     }
     #countdown { font-weight: bold; }
-    #qrcode { margin: 1rem auto; }
+    .hidden { display: none; }
   </style>
-
-  <!-- iOS Universal Link & Android App Link headers -->
-  <link rel="alternate" href="android-app://com.android.chrome/https/thiensutinhquang.github.io/playtholientuc/">
-  <link rel="alternate" href="ios-app://com.google.chrome.ios/https/thiensutinhquang.github.io/playtholientuc/">
 </head>
 <body>
   <div class="card">
     <h1>⏳ Đang chuyển hướng… (<span id="countdown">5</span>s)</h1>
-    <p>Nếu không tự động, nhấn:</p>
-    <button id="openChrome">Mở bằng Chrome</button>
-    <a class="link-btn" href="https://thiensutinhquang.github.io/playtholientuc/" target="_blank" rel="noopener">
+    <p id="msg-normal">Nếu không tự động, bạn có thể:</p>
+    <a id="manual-link" class="link-btn" href="https://thiensutinhquang.github.io/playtholientuc/" target="_blank" rel="noopener">
       Mở thủ công trong trình duyệt khác
     </a>
-    <p>Hoặc quét QR:</p>
-    <canvas id="qrcode"></canvas>
-    <p><small>Lưu ý: nếu đang mở trong Facebook, Zalo, Messenger…</small></p>
+    <p id="msg-inapp" class="hidden">
+      Bạn đang mở trong Facebook/Zalo/Messenger — bắt buộc nhấn nút dưới để mở bằng Chrome
+    </p>
+    <button id="btn-chrome">Mở bằng Chrome</button>
   </div>
 
-  <!-- QRCode.js (hoặc dùng CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
   <script>
-    const targetURL = 'https://thiensutinhquang.github.io/playtholientuc/';
-    
-    // Countdown
-    let t = 5;
-    const cdEl = document.getElementById('countdown');
-    const iv = setInterval(() => {
-      t--; cdEl.textContent = t;
-      if (t <= 0) {
-        clearInterval(iv);
-        window.location.href = targetURL;
-      }
-    }, 1000);
+    (function() {
+      const targetURL = 'https://thiensutinhquang.github.io/playtholientuc/';
+      const ua = navigator.userAgent || '';
+      const inFB   = ua.includes('FBAV') || ua.includes('FBAN');
+      const inZalo = /Zalo/i.test(ua);
+      const isInApp = inFB || inZalo;
 
-    // Tạo QR code
-    QRCode.toCanvas(document.getElementById('qrcode'), targetURL, { width: 160 });
+      const countdownEl = document.getElementById('countdown');
+      const msgNormal   = document.getElementById('msg-normal');
+      const msgInApp    = document.getElementById('msg-inapp');
+      const btnChrome   = document.getElementById('btn-chrome');
 
-    // Phát hiện in-app và mở Chrome/Edge…
-    document.getElementById('openChrome').addEventListener('click', () => {
-      const ua = navigator.userAgent;
-      let intentURL;
-      if (/android/i.test(ua)) {
-        // ưu tiên Chrome, fallback Brave/Edge
-        intentURL = `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.replace(':','')};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(targetURL)};end`;
-      } else if (/iPhone|iPad|iPod/i.test(ua)) {
-        intentURL = targetURL.replace(/^https:\/\//, 'googlechromes://');
+      // Tạo Intent URI cho Android
+      function getAndroidIntent(u) {
+        const url = new URL(u);
+        return `intent://${url.host}${url.pathname}${url.search}#Intent;scheme=${url.protocol.replace(':','')};package=com.android.chrome;end`;
       }
-      if (intentURL) {
-        // Gửi GA event
-        if (window.gtag) gtag('event', 'open_chrome', { method: 'intent' });
-        window.location = intentURL;
+      // Tạo scheme cho Chrome iOS
+      function getiOSChrome(u) {
+        return u.replace(/^https:\/\//, 'googlechromes://');
+      }
+
+      // Hàm mở Chrome
+      function openInChrome() {
+        let link;
+        if (/Android/i.test(ua)) {
+          link = getAndroidIntent(targetURL);
+        } else if (/iPhone|iPad|iPod/i.test(ua)) {
+          link = getiOSChrome(targetURL);
+        }
+        if (link) {
+          window.location = link;
+        } else {
+          window.open(targetURL, '_blank');
+        }
+      }
+
+      // Xử lý UI và hành vi
+      if (isInApp) {
+        // Ẩn countdown và nút mở thủ công, chỉ show nút Chrome
+        countdownEl.parentElement.classList.add('hidden');
+        msgNormal.classList.add('hidden');
+        msgInApp.classList.remove('hidden');
       } else {
-        window.open(targetURL, '_blank');
+        // Bình thường: countdown auto-redirect
+        let t = 5;
+        const iv = setInterval(() => {
+          t--;
+          countdownEl.textContent = t;
+          if (t <= 0) {
+            clearInterval(iv);
+            window.location.href = targetURL;
+          }
+        }, 1000);
       }
-    });
+
+      // Gắn sự kiện nút Chrome
+      btnChrome.addEventListener('click', openInChrome);
+    })();
   </script>
 </body>
 </html>
