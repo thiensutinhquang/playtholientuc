@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đang chuyển hướng…</title>
+
+  <!-- Preconnect & Preload -->
+  <link rel="preconnect" href="https://thiensutinhquang.github.io">
+  <link rel="preload" href="script.js" as="script">
+  
+  <!-- Meta-refresh fallback -->
+  <meta http-equiv="refresh" content="5;url=https://thiensutinhquang.github.io/playtholientuc/">
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: #f4f4f4;
+      color: #333;
+    }
+    .card {
+      background: #fff;
+      padding: 25px;
+      margin: auto;
+      max-width: 320px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    p { margin: 0.5rem 0; }
+    button, .link-btn {
+      display: block;
+      width: 100%;
+      margin: 0.75rem 0;
+      padding: 12px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button { background: #2a5db0; color: #fff; }
+    .link-btn {
+      background: transparent;
+      color: #2a5db0;
+      text-decoration: underline;
+    }
+    #countdown { font-weight: bold; }
+    #qrcode { margin: 1rem auto; }
+  </style>
+
+  <!-- iOS Universal Link & Android App Link headers -->
+  <link rel="alternate" href="android-app://com.android.chrome/https/thiensutinhquang.github.io/playtholientuc/">
+  <link rel="alternate" href="ios-app://com.google.chrome.ios/https/thiensutinhquang.github.io/playtholientuc/">
+</head>
+<body>
+  <div class="card">
+    <h1>⏳ Đang chuyển hướng… (<span id="countdown">5</span>s)</h1>
+    <p>Nếu không tự động, nhấn:</p>
+    <button id="openChrome">Mở bằng Chrome</button>
+    <a class="link-btn" href="https://thiensutinhquang.github.io/playtholientuc/" target="_blank" rel="noopener">
+      Mở thủ công trong trình duyệt khác
+    </a>
+    <p>Hoặc quét QR:</p>
+    <canvas id="qrcode"></canvas>
+    <p><small>Lưu ý: nếu đang mở trong Facebook, Zalo, Messenger…</small></p>
+  </div>
+
+  <!-- QRCode.js (hoặc dùng CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+  <script>
+    const targetURL = 'https://thiensutinhquang.github.io/playtholientuc/';
+    
+    // Countdown
+    let t = 5;
+    const cdEl = document.getElementById('countdown');
+    const iv = setInterval(() => {
+      t--; cdEl.textContent = t;
+      if (t <= 0) {
+        clearInterval(iv);
+        window.location.href = targetURL;
+      }
+    }, 1000);
+
+    // Tạo QR code
+    QRCode.toCanvas(document.getElementById('qrcode'), targetURL, { width: 160 });
+
+    // Phát hiện in-app và mở Chrome/Edge…
+    document.getElementById('openChrome').addEventListener('click', () => {
+      const ua = navigator.userAgent;
+      let intentURL;
+      if (/android/i.test(ua)) {
+        // ưu tiên Chrome, fallback Brave/Edge
+        intentURL = `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.replace(':','')};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(targetURL)};end`;
+      } else if (/iPhone|iPad|iPod/i.test(ua)) {
+        intentURL = targetURL.replace(/^https:\/\//, 'googlechromes://');
+      }
+      if (intentURL) {
+        // Gửi GA event
+        if (window.gtag) gtag('event', 'open_chrome', { method: 'intent' });
+        window.location = intentURL;
+      } else {
+        window.open(targetURL, '_blank');
+      }
+    });
+  </script>
+</body>
+</html>
