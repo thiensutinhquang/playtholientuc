@@ -2,123 +2,111 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Mở bằng Chrome</title>
+  <title>Đang chuyển hướng...</title>
   <!-- Tối ưu tốc độ tải -->
   <link rel="dns-prefetch" href="//thiensutinhquang.github.io">
   <link rel="preconnect" href="https://thiensutinhquang.github.io">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Reset & center */
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html,body { height:100%; font-family:sans-serif; background:#f0f2f5; display:flex; align-items:center; justify-content:center; }
-    .container {
-      background:#fff; padding:30px; border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.1); text-align:center;
-      max-width:380px; width:90%;
-    }
-    h1 { font-size:1.5rem; margin-bottom:1rem; color:#333; }
-    p  { color:#555; margin-bottom:1.5rem; }
-
-    /* Nút rất lớn, nổi bật với gradient */
-    #openChrome {
-      display:block; width:100%; padding:18px 0;
-      font-size:1.25rem; font-weight:600; color:#fff;
-      background:linear-gradient(135deg,#4285F4 0%,#34A853 100%);
-      border:none; border-radius:8px; cursor:pointer;
-      box-shadow:0 4px 12px rgba(0,0,0,0.15);
-      transition:transform .15s,box-shadow .15s;
-    }
-    #openChrome:hover {
-      transform:translateY(-2px);
-      box-shadow:0 6px 16px rgba(0,0,0,0.2);
-    }
-    #openChrome:active {
-      transform:translateY(0);
-      box-shadow:0 3px 8px rgba(0,0,0,0.15);
-    }
+    body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>⚠️ Vui lòng mở bằng Chrome hoặc trình duyệt hỗ trợ</h1>
-    <p>Nhấn nút bên dưới để vào trang với Chrome (hoặc browser thay thế)</p>
-    <button id="openChrome">MỞ BẰNG CHROME</button>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-sm w-full mx-4">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">⚠️ Mở bằng trình duyệt mặc định</h1>
+    <p class="text-gray-600 mb-6">Để có trải nghiệm tốt nhất và sử dụng các tính năng của ứng dụng, vui lòng nhấn nút bên dưới để tiếp tục.</p>
+    <button id="openExternalBrowser" class="w-full text-white font-bold py-3 px-4 rounded-lg transition-transform duration-150 ease-in-out transform hover:scale-105"
+            style="background: linear-gradient(135deg, #4285F4 0%, #34A853 100%);">
+      MỞ TRONG TRÌNH DUYỆT
+    </button>
   </div>
 
   <script>
   (function(){
-    const targetURL   = 'https://thiensutinhquang.github.io/playtholientuc/';
-    const ua          = navigator.userAgent || '';
-    const isAndroid   = /Android/i.test(ua);
-    const isIOS       = /iPhone|iPad|iPod/i.test(ua);
-    // Các in-app browser cần chặn tự động
-    const inAppTags   = ['FBAV','FBAN','Zalo','Messenger','Telegram'];
-    const isInApp     = inAppTags.some(tag => ua.includes(tag));
+    // URL đích. Đây là một Universal Link (iOS) và App Link (Android)
+    const targetURL    = 'https://thiensutinhquang.github.io/playtholientuc/';
+    
+    // --- BƯỚC 1: PHÁT HIỆN TRÌNH DUYỆT TRONG ỨNG DỤNG ---
+    const ua           = navigator.userAgent || '';
+    const isAndroid    = /Android/i.test(ua);
+    const isIOS        = /iPhone|iPad|iPod/i.test(ua);
+    const inAppKeywords = ['FBAV', 'FBAN', 'Zalo', 'Messenger', 'Telegram', 'Viber'];
+    const isInApp       = inAppKeywords.some(keyword => ua.includes(keyword));
 
-    // Nếu không phải in-app (desktop / browser thật), redirect thẳng
+    // Nếu người dùng đã ở trình duyệt chuẩn, App Link/Universal Link sẽ tự được kích hoạt.
+    // Chúng ta chuyển thẳng đến trang đích.
     if (!isInApp) {
       window.location.replace(targetURL);
       return;
     }
 
-    // Thử mở theo danh sách package (Android)
-    function tryAndroid(packages) {
+    // --- BƯỚC 2: LOGIC THOÁT KHỎI TRÌNH DUYỆT TRONG ỨNG DỤNG KHI CLICK NÚT ---
+    // Mục tiêu là đưa targetURL ra trình duyệt mặc định của hệ thống.
+    // Tại đó, iOS/Android sẽ tự xử lý App Link/Universal Link.
+
+    // Hàm cho Android: Sử dụng Intent để yêu cầu mở URL trong trình duyệt cụ thể.
+    function tryOpenInAndroid(packages) {
       let i = 0;
-      const next = () => {
+      const attemptNext = () => {
         if (i >= packages.length) {
-          // Chưa mở được, đến Play Store Chrome
-          window.location = 'https://play.google.com/store/apps/details?id=com.android.chrome';
+          // Nếu không có trình duyệt nào, đưa tới Play Store để cài Chrome.
+          window.location.href = 'https://play.google.com/store/apps/details?id=com.android.chrome';
           return;
         }
+        
         const pkg = packages[i++];
         const url = new URL(targetURL);
+        // Intent này yêu cầu mở URL trong một package cụ thể (trình duyệt).
+        // Khi đã ra ngoài trình duyệt đó, Android sẽ nhận diện App Link và mở ứng dụng nếu có.
         const intent = `intent://${url.host}${url.pathname}${url.search}` +
                        `#Intent;scheme=${url.protocol.replace(':','')};` +
                        `package=${pkg};` +
                        `S.browser_fallback_url=${encodeURIComponent(targetURL)};end`;
-        window.location = intent;
-        setTimeout(next, 1200);
+        window.location.href = intent;
+        setTimeout(attemptNext, 1200);
       };
-      next();
+      attemptNext();
     }
 
-    // Thử mở theo danh sách scheme (iOS)
-    function tryIOS(schemes, storeLink) {
+    // Hàm cho iOS: Sử dụng URL Scheme của các trình duyệt để mở URL.
+    function tryOpenInIOS(schemes, appStoreLink) {
       let i = 0;
-      const next = () => {
+      const attemptNext = () => {
         if (i >= schemes.length) {
-          window.location = storeLink;
+          // Nếu không có, đưa tới App Store để cài Chrome.
+          window.location.href = appStoreLink;
           return;
         }
         const scheme = schemes[i++];
-        const url = targetURL.replace(/^https:\/\//, scheme + '://');
-        window.location = url;
-        setTimeout(next, 1200);
+        // Thay thế https:// bằng scheme của trình duyệt, ví dụ: googlechrome://
+        // Khi Chrome mở link, iOS sẽ nhận diện Universal Link và mở ứng dụng.
+        const url = targetURL.replace(/^https?:\/\//, scheme + '://');
+        window.location.href = url;
+        setTimeout(attemptNext, 1200);
       };
-      next();
+      attemptNext();
     }
 
-    document.getElementById('openChrome').addEventListener('click', () => {
+    // Gắn sự kiện 'click' cho nút
+    document.getElementById('openExternalBrowser').addEventListener('click', () => {
+      // Thứ tự ưu tiên: Chrome -> Firefox -> Cốc Cốc -> Brave -> Edge
+      const androidPackages = [
+        'com.android.chrome', 'org.mozilla.firefox', 'com.coccoc.browser', 
+        'com.brave.browser', 'com.microsoft.emmx'
+      ];
+      const iosSchemes = [
+        'googlechromes', 'googlechrome', 'firefox', 'brave', 'microsoft-edge'
+      ];
+
       if (isAndroid) {
-        // Chrome → Brave → Edge → Firefox → Cốc Cốc
-        tryAndroid([
-          'com.android.chrome',
-          'com.brave.browser',
-          'com.microsoft.emmx',
-          'org.mozilla.firefox',
-          'com.coccoc.browser'
-        ]);
+        tryOpenInAndroid(androidPackages);
       } else if (isIOS) {
-        // iOS: Chrome secure → Chrome → Brave → Edge → Firefox → (Cốc Cốc iOS không phổ biến)
-        tryIOS([
-          'googlechromes',
-          'googlechrome',
-          'brave',
-          'microsoft-edge',
-          'firefox'
-        ], 'itms-apps://itunes.apple.com/app/id535886823');
+        // Link App Store của Chrome làm phương án dự phòng
+        tryOpenInIOS(iosSchemes, 'itms-apps://itunes.apple.com/app/id535886823');
       } else {
+        // Fallback cho desktop
         window.open(targetURL, '_blank');
       }
     });
