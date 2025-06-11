@@ -2,127 +2,127 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Đang chuyển hướng…</title>
-
-  <!-- Preconnect để tối ưu tốc độ -->
+  <title>Mở bằng Chrome</title>
+  <!-- Tối ưu tốc độ tải -->
+  <link rel="dns-prefetch" href="//thiensutinhquang.github.io">
   <link rel="preconnect" href="https://thiensutinhquang.github.io">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: #f4f4f4;
-      color: #333;
+    /* Reset & center */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { height:100%; font-family:sans-serif; background:#f0f2f5; display:flex; align-items:center; justify-content:center; }
+    .container {
+      background:#fff; padding:30px; border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.1); text-align:center;
+      max-width:380px; width:90%;
     }
-    .card {
-      background: #fff;
-      padding: 25px;
-      margin: auto;
-      max-width: 360px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    h1 { font-size:1.5rem; margin-bottom:1rem; color:#333; }
+    p  { color:#555; margin-bottom:1.5rem; }
+
+    /* Nút rất lớn, nổi bật với gradient */
+    #openChrome {
+      display:block; width:100%; padding:18px 0;
+      font-size:1.25rem; font-weight:600; color:#fff;
+      background:linear-gradient(135deg,#4285F4 0%,#34A853 100%);
+      border:none; border-radius:8px; cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+      transition:transform .15s,box-shadow .15s;
     }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    p { margin: 0.5rem 0; }
-    button, a.link-btn {
-      display: block;
-      width: 100%;
-      margin: 0.75rem 0;
-      padding: 12px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      text-align: center;
+    #openChrome:hover {
+      transform:translateY(-2px);
+      box-shadow:0 6px 16px rgba(0,0,0,0.2);
     }
-    button {
-      background: #2a5db0;
-      color: #fff;
+    #openChrome:active {
+      transform:translateY(0);
+      box-shadow:0 3px 8px rgba(0,0,0,0.15);
     }
-    a.link-btn {
-      background: transparent;
-      color: #2a5db0;
-      text-decoration: underline;
-    }
-    #countdown { font-weight: bold; }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>⏳ Đang chuyển hướng… (<span id="countdown">5</span>s)</h1>
-    <p id="msg-normal">Nếu không tự động, bạn có thể:</p>
-    <a id="manual-link" class="link-btn" href="https://thiensutinhquang.github.io/playtholientuc/" target="_blank" rel="noopener">
-      Mở thủ công trong trình duyệt khác
-    </a>
-    <p id="msg-inapp" class="hidden">
-      Bạn đang mở trong Facebook/Zalo/Messenger — bắt buộc nhấn nút dưới để mở bằng Chrome
-    </p>
-    <button id="btn-chrome">Mở bằng Chrome</button>
+  <div class="container">
+    <h1>⚠️ Vui lòng mở bằng Chrome hoặc trình duyệt hỗ trợ</h1>
+    <p>Nhấn nút bên dưới để vào trang với Chrome (hoặc browser thay thế)</p>
+    <button id="openChrome">MỞ BẰNG CHROME</button>
   </div>
 
   <script>
-    (function() {
-      const targetURL = 'https://thiensutinhquang.github.io/playtholientuc/';
-      const ua = navigator.userAgent || '';
-      const inFB   = ua.includes('FBAV') || ua.includes('FBAN');
-      const inZalo = /Zalo/i.test(ua);
-      const isInApp = inFB || inZalo;
+  (function(){
+    const targetURL   = 'https://thiensutinhquang.github.io/playtholientuc/';
+    const ua          = navigator.userAgent || '';
+    const isAndroid   = /Android/i.test(ua);
+    const isIOS       = /iPhone|iPad|iPod/i.test(ua);
+    // Các in-app browser cần chặn tự động
+    const inAppTags   = ['FBAV','FBAN','Zalo','Messenger','Telegram'];
+    const isInApp     = inAppTags.some(tag => ua.includes(tag));
 
-      const countdownEl = document.getElementById('countdown');
-      const msgNormal   = document.getElementById('msg-normal');
-      const msgInApp    = document.getElementById('msg-inapp');
-      const btnChrome   = document.getElementById('btn-chrome');
+    // Nếu không phải in-app (desktop / browser thật), redirect thẳng
+    if (!isInApp) {
+      window.location.replace(targetURL);
+      return;
+    }
 
-      // Tạo Intent URI cho Android
-      function getAndroidIntent(u) {
-        const url = new URL(u);
-        return `intent://${url.host}${url.pathname}${url.search}#Intent;scheme=${url.protocol.replace(':','')};package=com.android.chrome;end`;
-      }
-      // Tạo scheme cho Chrome iOS
-      function getiOSChrome(u) {
-        return u.replace(/^https:\/\//, 'googlechromes://');
-      }
-
-      // Hàm mở Chrome
-      function openInChrome() {
-        let link;
-        if (/Android/i.test(ua)) {
-          link = getAndroidIntent(targetURL);
-        } else if (/iPhone|iPad|iPod/i.test(ua)) {
-          link = getiOSChrome(targetURL);
+    // Thử mở theo danh sách package (Android)
+    function tryAndroid(packages) {
+      let i = 0;
+      const next = () => {
+        if (i >= packages.length) {
+          // Chưa mở được, đến Play Store Chrome
+          window.location = 'https://play.google.com/store/apps/details?id=com.android.chrome';
+          return;
         }
-        if (link) {
-          window.location = link;
-        } else {
-          window.open(targetURL, '_blank');
-        }
-      }
+        const pkg = packages[i++];
+        const url = new URL(targetURL);
+        const intent = `intent://${url.host}${url.pathname}${url.search}` +
+                       `#Intent;scheme=${url.protocol.replace(':','')};` +
+                       `package=${pkg};` +
+                       `S.browser_fallback_url=${encodeURIComponent(targetURL)};end`;
+        window.location = intent;
+        setTimeout(next, 1200);
+      };
+      next();
+    }
 
-      // Xử lý UI và hành vi
-      if (isInApp) {
-        // Ẩn countdown và nút mở thủ công, chỉ show nút Chrome
-        countdownEl.parentElement.classList.add('hidden');
-        msgNormal.classList.add('hidden');
-        msgInApp.classList.remove('hidden');
+    // Thử mở theo danh sách scheme (iOS)
+    function tryIOS(schemes, storeLink) {
+      let i = 0;
+      const next = () => {
+        if (i >= schemes.length) {
+          window.location = storeLink;
+          return;
+        }
+        const scheme = schemes[i++];
+        const url = targetURL.replace(/^https:\/\//, scheme + '://');
+        window.location = url;
+        setTimeout(next, 1200);
+      };
+      next();
+    }
+
+    document.getElementById('openChrome').addEventListener('click', () => {
+      if (isAndroid) {
+        // Chrome → Brave → Edge → Firefox → Cốc Cốc
+        tryAndroid([
+          'com.android.chrome',
+          'com.brave.browser',
+          'com.microsoft.emmx',
+          'org.mozilla.firefox',
+          'com.coccoc.browser'
+        ]);
+      } else if (isIOS) {
+        // iOS: Chrome secure → Chrome → Brave → Edge → Firefox → (Cốc Cốc iOS không phổ biến)
+        tryIOS([
+          'googlechromes',
+          'googlechrome',
+          'brave',
+          'microsoft-edge',
+          'firefox'
+        ], 'itms-apps://itunes.apple.com/app/id535886823');
       } else {
-        // Bình thường: countdown auto-redirect
-        let t = 5;
-        const iv = setInterval(() => {
-          t--;
-          countdownEl.textContent = t;
-          if (t <= 0) {
-            clearInterval(iv);
-            window.location.href = targetURL;
-          }
-        }, 1000);
+        window.open(targetURL, '_blank');
       }
-
-      // Gắn sự kiện nút Chrome
-      btnChrome.addEventListener('click', openInChrome);
-    })();
+    });
+  })();
   </script>
 </body>
 </html>
