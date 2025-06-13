@@ -17,18 +17,104 @@
      * 3. Bảng màu: Bảng màu tối giản với một màu nhấn sống động duy nhất cho các phần tử tương tác.
     */
 
+    /* Default (Dark Neumorphic) */
     :root {
       --background-color: #2c313a; /* Màu than củi tối, hơi ngả xanh */
+      --element-bg: #2c313a;
       --text-color-primary: #e0e5ec; /* Màu trắng xám mềm mại để dễ đọc */
       --text-color-secondary: #97a0ae; /* Màu xám nhạt cho thông tin phụ */
       --accent-color: #00a8ff; /* Màu xanh dương điện tử sống động cho tiêu điểm và tương tác */
       --accent-color-darker: #0086cc;
       --shadow-light: rgba(255, 255, 255, 0.05); /* Bóng đổ sáng tinh tế */
       --shadow-dark: rgba(0, 0, 0, 0.4); /* Bóng đổ tối sâu hơn */
-      --element-bg: #2c313a; /* Các phần tử có cùng màu nền trong neumorphism */
       --border-radius-main: 20px;
       --border-radius-small: 15px;
     }
+
+    /* Light Mode */
+    body.light-mode {
+      --background-color: #e0e5ec;
+      --element-bg: #f0f2f5;
+      --text-color-primary: #2c313a;
+      --text-color-secondary: #6c737f;
+      --accent-color: #007bff;
+      --accent-color-darker: #0056b3;
+      --shadow-light: rgba(255, 255, 255, 0.9);
+      --shadow-dark: rgba(163, 177, 198, 0.6);
+    }
+
+    /* Mạnh mẽ: Nền xanh đậm, chữ màu vàng. */
+    body.theme-manhme {
+      --background-color: #1a2a4b;
+      --element-bg: #1a2a4b;
+      --text-color-primary: #ffcc00;
+      --text-color-secondary: #aaaaaa;
+      --accent-color: #ffcc00;
+      --accent-color-darker: #ccaa00;
+      --shadow-light: rgba(255, 255, 255, 0.08);
+      --shadow-dark: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Dịu nhẹ: Nền tím, chữ màu hồng pastel. */
+    body.theme-diunhe {
+      --background-color: #3b2a4b;
+      --element-bg: #3b2a4b;
+      --text-color-primary: #ffb6c1;
+      --text-color-secondary: #d0c0d0;
+      --accent-color: #ff69b4;
+      --accent-color-darker: #cc5490;
+      --shadow-light: rgba(255, 255, 255, 0.07);
+      --shadow-dark: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Tươi mát: Nền xanh lá, chữ màu xanh ngọc. */
+    body.theme-tuoimat {
+      --background-color: #2a4b3b;
+      --element-bg: #2a4b3b;
+      --text-color-primary: #00ffff;
+      --text-color-secondary: #b0e0e6;
+      --accent-color: #00a0a0;
+      --accent-color-darker: #007d7d;
+      --shadow-light: rgba(255, 255, 255, 0.06);
+      --shadow-dark: rgba(0, 0, 0, 0.55);
+    }
+
+    /* Hiện đại: Nền xanh lá, chữ màu vàng. */
+    body.theme-hiendai {
+      --background-color: #2a4b2a;
+      --element-bg: #2a4b2a;
+      --text-color-primary: #ffff00;
+      --text-color-secondary: #c0d0c0;
+      --accent-color: #ffff00;
+      --accent-color-darker: #cccc00;
+      --shadow-light: rgba(255, 255, 255, 0.06);
+      --shadow-dark: rgba(0, 0, 0, 0.55);
+    }
+
+    /* Ấm áp: Nền tím, chữ màu vàng. */
+    body.theme-amap {
+      --background-color: #4b2a3b;
+      --element-bg: #4b2a3b;
+      --text-color-primary: #ffeb3b;
+      --text-color-secondary: #d0c0d0;
+      --accent-color: #ffeb3b;
+      --accent-color-darker: #ccbb00;
+      --shadow-light: rgba(255, 255, 255, 0.07);
+      --shadow-dark: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Trang nhã: Nền xanh đậm, chữ màu xanh ngọc. */
+    body.theme-trangnha {
+      --background-color: #1a2a4b;
+      --element-bg: #1a2a4b;
+      --text-color-primary: #95d5b2;
+      --text-color-secondary: #aaaaaa;
+      --accent-color: #6dcc91;
+      --accent-color-darker: #56a673;
+      --shadow-light: rgba(255, 255, 255, 0.08);
+      --shadow-dark: rgba(0, 0, 0, 0.6);
+    }
+
 
     *, *::before, *::after {
       box-sizing: border-box;
@@ -113,7 +199,7 @@
     }
 
     /* Trạng thái "nhấn" hoặc đang hoạt động của nút */
-    .nav-button:active, .dropdown.active .dropdown-toggle {
+    .nav-button:active, .dropdown-toggle:active, .dropdown.active .dropdown-toggle {
       color: var(--accent-color);
       box-shadow: 
         inset 4px 4px 8px var(--shadow-dark),
@@ -146,7 +232,147 @@
         background: rgba(0, 0, 0, 0.2);
         color: var(--accent-color);
     }
-    .dropdown.active .dropdown-menu { display: block; }
+    /* .dropdown.active .dropdown-menu { display: block; } -- Handled by JS for animation */
+    
+    /* === MỚI: Theme Switcher Dropdown Styles === */
+    .theme-switcher-dropdown .dropdown-menu {
+        padding: 1rem;
+        width: 200px;
+        left: unset; /* Override default right:0 from main dropdown */
+        right: 0;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px); /* Start slightly above */
+        transition: opacity 0.3s ease-out, visibility 0.3s ease-out, transform 0.3s ease-out;
+        pointer-events: none; /* Disable interaction when hidden */
+    }
+
+    .theme-switcher-dropdown .dropdown-menu.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto; /* Enable interaction when active */
+    }
+
+    .theme-mode-switch {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        color: var(--text-color-primary);
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 0.5rem;
+    }
+
+    /* The switch - the box around the slider */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* The slider */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--background-color); /* Match neumorphic base */
+      -webkit-transition: .4s;
+      transition: .4s;
+      box-shadow: 
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: var(--text-color-secondary);
+      -webkit-transition: .4s;
+      transition: .4s;
+      box-shadow: 2px 2px 4px var(--shadow-dark);
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-color);
+      box-shadow: 
+        inset 2px 2px 5px var(--accent-color-darker),
+        inset -2px -2px 5px var(--accent-color);
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(20px);
+      -ms-transform: translateX(20px);
+      transform: translateX(20px);
+      background-color: var(--text-color-primary); /* Bright color when checked */
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+      border-radius: 24px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+
+    .theme-presets {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 columns */
+        gap: 10px; /* Space between buttons */
+    }
+
+    .preset-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 
+            3px 3px 6px var(--shadow-dark),
+            -3px -3px 6px var(--shadow-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .preset-btn.active {
+        box-shadow: 
+            inset 2px 2px 4px var(--shadow-dark),
+            inset -2px -2px 4px var(--shadow-light),
+            0 0 0 3px var(--accent-color); /* Accent ring when active */
+    }
+    
+    /* Specific preset button colors - These are the actual background colors */
+    .preset-btn.theme-manhme { background-color: #1a2a4b; }
+    .preset-btn.theme-diunhe { background-color: #3b2a4b; }
+    .preset-btn.theme-tuoimat { background-color: #2a4b3b; }
+    .preset-btn.theme-hiendai { background-color: #2a4b2a; }
+    .preset-btn.theme-amap { background-color: #4b2a3b; }
+    .preset-btn.theme-trangnha { background-color: #1a2a4b; }
+
 
     /* === CẬP NHẬT: Ô tìm kiếm - Kiểu "lõm" Neumorphic === */
     #search-wrapper {
@@ -554,7 +780,7 @@
     .player-row-2 button:active {
       color: var(--accent-color);
       box-shadow: 
-        inset 4px 4px 8px var(--shadow-dark),
+        inset 4px 44px 8px var(--shadow-dark),
         inset -4px -4px 8px var(--shadow-light);
     }
     .player-row-2 button.active-auto {
@@ -645,9 +871,6 @@
       color: var(--text-color-secondary);
       cursor: pointer;
       transition: all 0.2s ease-in-out;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       box-shadow: 
         5px 5px 10px var(--shadow-dark),
         -5px -5px 10px var(--shadow-light);
@@ -719,13 +942,26 @@
         <a href="https://thiensutinhquang.github.io/PlayMusic/" target="_blank" class="nav-button">Nghe nhạc</a>
         <!-- Nút "xem video" mới -->
         <a href="https://thiensutinhquang.github.io/Playlist-YouTube/" target="_blank" class="nav-button">Xem video</a>
-        <div class="dropdown">
-          <button class="dropdown-toggle">Mạng xã hội</button>
-          <div class="dropdown-menu">
-            <a href="https://www.youtube.com/channel/UCLdLj1-g4TI5lSmWeD60mnA" target="_blank">📺 Youtube</a>
-            <a href="https://www.tiktok.com/@minhsutinhquang" target="_blank">🎵 TikTok</a>
-            <a href="https://www.facebook.com/phatphapnhiemmauTinhQuang" target="_blank">📘 Facebook</a>
-            <a href="https://t.me/Giaoly_phap_don_ngo" target="_blank">💬 Zalo</a>
+        <div class="dropdown theme-switcher-dropdown">
+          <button class="dropdown-toggle" id="theme-toggle-btn" title="Thay đổi giao diện">
+              🎨 Giao diện
+          </button>
+          <div class="dropdown-menu theme-menu">
+              <div class="theme-mode-switch">
+                  <span>Chế độ</span>
+                  <label class="switch">
+                      <input type="checkbox" id="light-dark-toggle">
+                      <span class="slider round"></span>
+                  </label>
+              </div>
+              <div class="theme-presets">
+                  <button class="preset-btn theme-manhme" data-theme="theme-manhme" title="Mạnh mẽ"></button>
+                  <button class="preset-btn theme-diunhe" data-theme="theme-diunhe" title="Dịu nhẹ"></button>
+                  <button class="preset-btn theme-tuoimat" data-theme="theme-tuoimat" title="Tươi mát"></button>
+                  <button class="preset-btn theme-hiendai" data-theme="theme-hiendai" title="Hiện đại"></button>
+                  <button class="preset-btn theme-amap" data-theme="theme-amap" title="Ấm áp"></button>
+                  <button class="preset-btn theme-trangnha" data-theme="theme-trangnha" title="Trang nhã"></button>
+              </div>
           </div>
         </div>
       </div>
@@ -816,6 +1052,12 @@
         const accordionContainer = document.getElementById("accordion");
         const fallbackElement = document.getElementById("fallback");
         const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+        // NEW: Theme switcher elements
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const themeMenu = document.querySelector('.theme-menu');
+        const lightDarkToggle = document.getElementById('light-dark-toggle');
+        const presetThemeButtons = document.querySelectorAll('.theme-presets .preset-btn');
         
         // Các nút điều khiển
         const playPauseBtn = document.getElementById("play-pause-btn");
@@ -1621,15 +1863,136 @@
             console.warn('Trình duyệt này không hỗ trợ Web Speech API.');
         }
         
-        if(dropdownToggle) dropdownToggle.addEventListener('click', () => {
+        if(dropdownToggle) dropdownToggle.addEventListener('click', (event) => {
+            // Close other dropdowns first
+            document.querySelectorAll('.dropdown.active').forEach(d => {
+                if (d !== dropdownToggle.closest('.dropdown')) {
+                    d.classList.remove('active');
+                }
+            });
             dropdownToggle.closest('.dropdown').classList.toggle('active');
         });
 
-        window.addEventListener('click', (event) => {
-            if (!event.target.matches('.dropdown-toggle')) {
-                document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+        // NEW: Theme switcher dropdown logic
+        let autoCloseTimer = null; // Global timer for theme menu
+
+        function openThemeMenu() {
+            if (themeMenu) {
+                themeMenu.classList.add('active');
+                resetAutoCloseTimer(); // Start/reset timer
             }
+        }
+
+        function closeThemeMenu() {
+            if (themeMenu) {
+                themeMenu.classList.remove('active');
+                clearTimeout(autoCloseTimer); // Clear timer when manually closed
+            }
+        }
+
+        function resetAutoCloseTimer() {
+            clearTimeout(autoCloseTimer);
+            autoCloseTimer = setTimeout(closeThemeMenu, 7000); // 7 seconds
+        }
+
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent document click from closing it immediately
+                if (themeMenu.classList.contains('active')) {
+                    closeThemeMenu();
+                } else {
+                    openThemeMenu();
+                }
+            });
+        }
+        
+        // Add event listeners to keep menu open on interaction
+        if (themeMenu) {
+            themeMenu.addEventListener('mouseover', resetAutoCloseTimer);
+            themeMenu.addEventListener('touchstart', resetAutoCloseTimer); // For mobile touch interaction
+            // Also reset timer on any click within the menu itself, as interactions trigger a click
+            themeMenu.addEventListener('click', resetAutoCloseTimer); 
+        }
+
+        // Hide menus if clicked outside
+        window.addEventListener('click', (event) => {
+            // Close all dropdowns
+            document.querySelectorAll('.dropdown').forEach(d => {
+                if (!d.contains(event.target)) { // Only close if click is outside the dropdown itself
+                    d.classList.remove('active');
+                }
+            });
         });
+
+        // Theme application logic
+        const THEME_STORAGE_KEY = 'user-theme';
+
+        function applyTheme(themeName) {
+            // Remove all existing theme classes first to ensure only one is active
+            document.body.classList.remove(
+                'light-mode',
+                'theme-manhme',
+                'theme-diunhe',
+                'theme-tuoimat',
+                'theme-hiendai',
+                'theme-amap',
+                'theme-trangnha'
+            );
+            
+            if (themeName === 'light-mode') {
+                document.body.classList.add('light-mode');
+                lightDarkToggle.checked = true;
+            } else if (themeName.startsWith('theme-')) {
+                document.body.classList.add(themeName);
+                lightDarkToggle.checked = false; // A preset is active, so light/dark toggle should be off
+            } else { // 'dark-mode' or 'default-dark' (implicitly the :root theme)
+                // No class needed for default dark mode as it uses :root variables
+                lightDarkToggle.checked = false; 
+            }
+
+            localStorage.setItem(THEME_STORAGE_KEY, themeName);
+
+            // Update active state of preset buttons
+            presetThemeButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === themeName);
+            });
+        }
+
+        // Handles the light/dark toggle switch
+        function toggleLightDarkMode() {
+            if (lightDarkToggle.checked) {
+                applyTheme('light-mode');
+            } else {
+                applyTheme('default-dark'); // Our implicit dark mode (reverts to :root)
+            }
+        }
+
+        // Event listeners for theme elements
+        if (lightDarkToggle) {
+            lightDarkToggle.addEventListener('change', () => {
+                if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
+                toggleLightDarkMode();
+            });
+        }
+
+        presetThemeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
+                const selectedTheme = button.dataset.theme;
+                applyTheme(selectedTheme);
+            });
+        });
+
+        // Initial theme load
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            // Default to dark mode if no theme saved
+            applyTheme('default-dark'); // Apply default dark (uses :root variables)
+        }
+
 
         // CẬP NHẬT: Gán sự kiện cho cả 2 nút cuộn
         if(scrollToTopButton) scrollToTopButton.addEventListener('click', () => {
