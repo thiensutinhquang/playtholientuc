@@ -113,7 +113,7 @@
     }
 
     /* Trạng thái "nhấn" hoặc đang hoạt động của nút */
-    .nav-button:active, .dropdown-toggle:active, .dropdown.active .dropdown-toggle {
+    .nav-button:active, .dropdown.active .dropdown-toggle {
       color: var(--accent-color);
       box-shadow: 
         inset 4px 4px 8px var(--shadow-dark),
@@ -394,6 +394,15 @@
       font-weight: 600;
       padding: 2px 4px;
       border-radius: 4px;
+    }
+    /* Real-time speech highlighting */
+    .poem-line.highlight-speech {
+        background-color: var(--accent-color); /* Use accent color for highlighting */
+        color: #111; /* Dark text on bright highlight */
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        display: inline-block; /* Essential for padding/margin */
     }
     
     /* === THÊM MỚI: Nút Chia sẻ === */
@@ -844,6 +853,153 @@
         }
 
         /**
+         * Đánh dấu (highlight) một từ khóa trong văn bản.
+         * @param {string} text - Văn bản gốc.
+         * @param {string} keyword - Từ khóa cần đánh dấu.
+         * @returns {string} Văn bản dạng HTML với từ khóa đã được đánh dấu.
+         */
+        function highlightKeyword(text, keyword) {
+            if (!text || !keyword) return text;
+            const normalizedKeyword = removeVietnameseAccents(keyword.trim());
+            if (!normalizedKeyword) return text;
+            const escapedKeyword = normalizedKeyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const pattern = new RegExp(escapedKeyword, 'gi');
+            const normalizedText = removeVietnameseAccents(text);
+            
+            let result = "";
+            let lastIndex = 0;
+            let match;
+
+            while ((match = pattern.exec(normalizedText)) !== null) {
+                const start = match.index;
+                const end = start + match[0].length;
+                result += text.substring(lastIndex, start);
+                result += `<mark class="highlight">${text.substring(start, end)}</mark>`;
+                lastIndex = end;
+            }
+            result += text.substring(lastIndex);
+            return result;
+        }
+
+        /**
+         * Hàm trợ giúp để hiển thị thông báo tạm thời trên màn hình.
+         * @param {string} message - Nội dung thông báo.
+         * @param {string} type - Loại thông báo ('success' hoặc 'error').
+         */
+        function showTempMessage(message, type = 'error') {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                padding: 15px 25px; border-radius: 8px; z-index: 2001; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                animation: fadeOut 5s forwards; /* Thêm hiệu ứng fade out */
+                font-family: 'Inter', sans-serif; /* Đảm bảo font chữ nhất quán */
+            `;
+            if (type === 'error') {
+                messageDiv.style.background = '#f44336'; /* Màu nền đỏ cho lỗi */
+                messageDiv.style.color = 'white';
+            } else {
+                messageDiv.style.background = '#4CAF50'; /* Màu nền xanh lá cho thành công */
+                messageDiv.style.color = 'white';
+            }
+            document.body.appendChild(messageDiv);
+
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000); // Ẩn sau 5 giây (bao gồm thời gian animate)
+        }
+
+        /**
+         * Đánh dấu liên kết đang hoạt động trong TOC.
+         * @param {number} indexToHighlight - Chỉ mục của bài thơ cần đánh dấu trong originalData.
+         */
+        function highlightTOC(indexToHighlight) {
+            const tocLinks = document.querySelectorAll(".toc a");
+            tocLinks.forEach(link => {
+                if (link.dataset.originalIndex) { // SỬA LỖI: Luôn kiểm tra dataset
+                    const linkIndex = parseInt(link.dataset.originalIndex, 10);
+                    link.classList.toggle("active", linkIndex === indexToHighlight);
+                }
+            });
+        }
+
+        /**
+         * Highlight the current speaking line.
+         * @param {number} lineIdx - The index of the line to highlight.
+         */
+        function highlightCurrentLine(lineIdx) {
+            // Remove previous highlights
+            document.querySelectorAll('.poem-line.highlight-speech').forEach(span => {
+                span.classList.remove('highlight-speech');
+            });
+
+            // Add highlight to current line
+            const currentPoemElement = document.getElementById(`item-${currentIndex}`);
+            if (currentPoemElement) {
+                const lineSpan = currentPoemElement.querySelector(`.poem-line[data-line-index="${lineIdx}"]`);
+                if (lineSpan) {
+                    lineSpan.classList.add('highlight-speech');
+                    // Scroll to view
+                    lineSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        /**
+         * Remove highlight from a specific line (or all if -1).
+         * @param {number} lineIdx - The index of the line to remove highlight from, or -1 for all.
+         */
+        function removeHighlight(lineIdx) {
+            if (lineIdx === -1) {
+                document.querySelectorAll('.poem-line.highlight-speech').forEach(span => {
+                    span.classList.remove('highlight-speech');
+                });
+            } else {
+                const currentPoemElement = document.getElementById(`item-${currentIndex}`);
+                if (currentPoemElement) {
+                    const lineSpan = currentPoemElement.querySelector(`.poem-line[data-line-index="${lineIdx}"]`);
+                    if (lineSpan) {
+                        lineSpan.classList.remove('highlight-speech');
+                    }
+                }
+            }
+        }
+
+        /**
+         * Hàm sao chép và quản lý Modal.
+         * @param {string} text - Văn bản cần sao chép.
+         */
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.top = 0;
+            textArea.style.left = 0;
+            textArea.style.opacity = 0;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                if (shareModalOverlay) shareModalOverlay.style.display = 'flex';
+            } catch (err) {
+                console.error('Không thể sao chép văn bản: ', err);
+                showTempMessage('Rất tiếc, không thể sao chép văn bản.', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+        
+        /**
+         * Đóng modal chia sẻ.
+         */
+        function closeModal() {
+            if (shareModalOverlay) shareModalOverlay.style.display = 'none';
+        }
+
+
+        /**
          * Khởi tạo chỉ mục Fuse.js để tìm kiếm mờ.
          * @param {Array} data - Tập dữ liệu để lập chỉ mục.
          */
@@ -892,35 +1048,6 @@
                 }
             }
         }
-
-        /**
-         * Đánh dấu (highlight) một từ khóa trong văn bản.
-         * @param {string} text - Văn bản gốc.
-         * @param {string} keyword - Từ khóa cần đánh dấu.
-         * @returns {string} Văn bản dạng HTML với từ khóa đã được đánh dấu.
-         */
-        function highlightKeyword(text, keyword) {
-            if (!text || !keyword) return text;
-            const normalizedKeyword = removeVietnameseAccents(keyword.trim());
-            if (!normalizedKeyword) return text;
-            const escapedKeyword = normalizedKeyword.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-            const pattern = new RegExp(escapedKeyword, 'gi');
-            const normalizedText = removeVietnameseAccents(text);
-            
-            let result = "";
-            let lastIndex = 0;
-            let match;
-
-            while ((match = pattern.exec(normalizedText)) !== null) {
-                const start = match.index;
-                const end = start + match[0].length;
-                result += text.substring(lastIndex, start);
-                result += `<mark class="highlight">${text.substring(start, end)}</mark>`;
-                lastIndex = end;
-            }
-            result += text.substring(lastIndex);
-            return result;
-        }
         
         /**
          * Hiển thị các bài thơ lên DOM.
@@ -947,7 +1074,6 @@
                 const image = row["Ảnh"] || "";
 
                 const displayTitle = highlightKeyword(title, keyword);
-                const displayContent = highlightKeyword(content.replace(/\n/g, "<br>"), keyword);
                 const details = document.createElement("details");
                 details.id = `item-${originalIndex}`;
                 details.onclick = (e) => handleDetailsClick(e, details, title, content, originalIndex);
@@ -956,8 +1082,44 @@
                 summary.innerHTML = displayTitle;
                 const body = document.createElement("div");
                 body.className = "content-body";
-                body.innerHTML = displayContent + (image ? `<img src="${image}" onerror="this.style.display='none';">` : "");
 
+                // NEW: Split content into sentences/phrases for more granular highlighting
+                // Normalize newlines first to handle paragraphs and single line breaks consistently
+                const contentWithNormalizedBreaks = content.replace(/\r\n|\r/g, '\n'); // Convert all types of newlines to \n
+                const paragraphs = contentWithNormalizedBreaks.split(/\n\s*\n/); // Split into paragraphs by double newlines
+
+                let currentLineIndex = 0; // This will track the index for poem-line spans
+
+                paragraphs.forEach((paraText, paraIdx) => {
+                    const sentencesInPara = paraText.match(/[^.!?]*[.!?\s]*|[^.!?\n]+/g) || []; // Robust sentence splitting
+                    
+                    sentencesInPara.forEach((sentence, sentenceIdx) => {
+                        if (sentence.trim().length > 0) {
+                            const lineSpan = document.createElement('span');
+                            lineSpan.className = 'poem-line';
+                            lineSpan.dataset.lineIndex = currentLineIndex++; // Each sentence/fragment is a 'line'
+                            lineSpan.dataset.poemIndex = originalIndex;
+                            lineSpan.innerHTML = highlightKeyword(sentence.trim(), keyword);
+                            body.appendChild(lineSpan);
+                            // Add a non-breaking space or a small margin/padding between segments for readability
+                            if (sentenceIdx < sentencesInPara.length - 1 || paraIdx < paragraphs.length -1) {
+                                body.appendChild(document.createTextNode(' ')); // Add a space between segments
+                            }
+                        }
+                    });
+                    if (paraIdx < paragraphs.length - 1) { // Add double break between paragraphs
+                        body.appendChild(document.createElement('br'));
+                        body.appendChild(document.createElement('br'));
+                    }
+                });
+
+                // Add image and share button as before
+                if (image) {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image;
+                    imgElement.onerror = function() { this.style.display='none'; };
+                    body.appendChild(imgElement);
+                }
                 const shareContainer = document.createElement('div');
                 shareContainer.className = 'share-button-container';
                 const shareBtn = document.createElement('button');
@@ -1007,6 +1169,14 @@
             }
         }
         
+        // New: Array to hold utterances for the current poem
+        let currentPoemUtterances = [];
+        // New: Index of the currently speaking line within currentPoemUtterances
+        let currentLineIndex = -1;
+        // New: A flag to indicate if our app *intends* speech to be happening
+        let isAppSpeaking = false;
+
+
         /**
          * Mở một bài thơ cụ thể và chuẩn bị để phát.
          */
@@ -1016,11 +1186,11 @@
             if (targetDetails) {
                 targetDetails.setAttribute('open', '');
             }
-            highlightTOC(index);
+            highlightTOC(index); // This function is now defined above
             currentIndex = index;
             if (loopBtn) loopBtn.classList.toggle("active-auto", autoPlay);
-            preparePlayback(title, content);
-            play();
+            preparePlayback(title, content); // Prepare all lines, but don't play yet
+            play(); // Start playing from the first line
         }
 
         /**
@@ -1031,7 +1201,7 @@
             if (targetDetails) {
                 targetDetails.removeAttribute('open');
             }
-            highlightTOC(-1);
+            highlightTOC(-1); // This function is now defined above
             if(currentIndex === index) {
                 stop();
                 currentIndex = -1;
@@ -1040,69 +1210,185 @@
 
         /**
          * Chuẩn bị văn bản để tổng hợp giọng nói mà không phát ngay lập tức.
+         * @param {string} title - Tiêu đề bài thơ.
+         * @param {string} content - Nội dung bài thơ.
          */
         function preparePlayback(title, content) {
-            stop();
-            const textToSpeak = `${title}. ${content}`;
-            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-            const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("vi")) || speechSynthesis.getVoices()[0];
-            if (voice) currentUtterance.voice = voice;
-            
-            if (volumeSlider) currentUtterance.volume = parseFloat(volumeSlider.value);
-            if (rateSlider) currentUtterance.rate = parseFloat(rateSlider.value);
+            stop(true); // Stop any ongoing speech and clear highlights
+            currentPoemUtterances = [];
+            currentLineIndex = -1;
 
-            currentUtterance.onstart = () => {
-                isPlaying = true;
-                if (playPauseBtn) playPauseBtn.textContent = '⏸️';
-                const estimatedDuration = (textToSpeak.length / (currentUtterance.rate * 15)) * 1000;
-                let startTime = Date.now();
-                if(progressInterval) clearInterval(progressInterval);
-                progressInterval = setInterval(() => {
-                    let elapsed = Date.now() - startTime;
-                    let progress = Math.min(100, (elapsed / estimatedDuration) * 100);
-                    if (progressBar) progressBar.style.width = `${progress}%`;
-                }, 100);
-            };
+            const poemElement = document.getElementById(`item-${currentIndex}`);
+            if (!poemElement) {
+                showTempMessage('Không tìm thấy nội dung bài thơ để phát.', 'error');
+                return;
+            }
+            const poemLinesSpans = poemElement.querySelectorAll('.poem-line');
+            if (poemLinesSpans.length === 0) {
+                showTempMessage('Bài thơ không có nội dung để phát.', 'error');
+                return;
+            }
             
-            currentUtterance.onend = () => {
-                if (progressInterval) clearInterval(progressInterval);
-                if (progressBar) progressBar.style.width = '100%';
-                if (autoPlay) {
-                    playRandom();
-                } else {
-                    stop(false);
-                }
-            };
+            // Now, currentPoemUtterances directly corresponds to these spans
+            poemLinesSpans.forEach((lineSpan, idx) => {
+                const lineText = lineSpan.textContent.trim();
+                if (lineText.length === 0) return; // Skip empty spans
+
+                const utterance = new SpeechSynthesisUtterance(lineText);
+                const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("vi")) || speechSynthesis.getVoices()[0];
+                if (voice) utterance.voice = voice;
+                
+                utterance.volume = parseFloat(volumeSlider.value);
+                utterance.rate = parseFloat(rateSlider.value);
+
+                utterance.onstart = () => {
+                    isAppSpeaking = true; // Our internal flag
+                    isPlaying = true;
+                    if (playPauseBtn) playPauseBtn.textContent = '⏸️';
+                    highlightCurrentLine(idx); // Highlight the current line
+                    
+                    // Re-estimate progress based on character count of current line
+                    // Use the original text length for estimation
+                    const estimatedLineDuration = (lineText.length / (utterance.rate * 15)) * 1000;
+                    let startTime = Date.now();
+                    if(progressInterval) clearInterval(progressInterval);
+                    
+                    // Calculate overall poem progress based on current line and total lines
+                    const totalLines = poemLinesSpans.length;
+                    progressInterval = setInterval(() => {
+                        let elapsed = Date.now() - startTime;
+                        let lineProgress = Math.min(100, (elapsed / estimatedLineDuration) * 100);
+                        let totalProgress = ((idx / totalLines) * 100) + (lineProgress / totalLines);
+                        if (progressBar) progressBar.style.width = `${Math.min(100, totalProgress)}%`;
+                    }, 50); // More frequent updates for line progress
+                };
+                
+                utterance.onend = () => {
+                    if (progressBar) progressBar.style.width = '0%'; // Reset progress for the line
+                    removeHighlight(idx); // Remove highlight after line ends
+                    currentLineIndex = idx + 1; // Move to next line
+
+                    if (currentLineIndex < currentPoemUtterances.length) {
+                        // If there are more lines, speak the next one
+                        if (isAppSpeaking && !speechSynthesis.paused) { // Only speak next if our app *intends* to be speaking AND not paused
+                            speechSynthesis.speak(currentPoemUtterances[currentLineIndex]);
+                        }
+                    } else {
+                        // All lines spoken for the current poem
+                        isAppSpeaking = false; // Our internal flag
+                        if (progressInterval) clearInterval(progressInterval);
+                        if (progressBar) progressBar.style.width = '100%'; // Full progress for poem
+                        if (autoPlay) {
+                            playRandom();
+                        } else {
+                            stop(false); // Stop, but don't cancel speech in case there's a queue
+                        }
+                    }
+                };
+
+                utterance.onerror = (event) => {
+                    // CẬP NHẬT: Ghi log lỗi cụ thể hơn vào console
+                    console.error('Lỗi phát âm:', event.error, event); 
+                    let errorMessage = 'Lỗi phát âm không xác định.';
+                    switch (event.error) {
+                        case 'canceled':
+                            errorMessage = 'Quá trình phát âm đã bị hủy.';
+                            break;
+                        case 'interrupted':
+                            errorMessage = 'Phát âm bị gián đoạn. Có thể do quá nhiều yêu cầu hoặc lỗi hệ thống.';
+                            break;
+                        case 'network':
+                            errorMessage = 'Lỗi mạng khi cố gắng phát âm. Vui lòng kiểm tra kết nối internet.';
+                            break;
+                        case 'synthesis-failed':
+                            errorMessage = 'Không thể tổng hợp giọng nói. Có thể do văn bản quá dài hoặc lỗi dịch vụ.';
+                            break;
+                        case 'synthesis-unavailable':
+                            errorMessage = 'Dịch vụ tổng hợp giọng nói không khả dụng.';
+                            break;
+                        case 'synthesis-unsupported':
+                            errorMessage = 'Tổng hợp giọng nói không được hỗ trợ bởi trình duyệt của bạn.';
+                            break;
+                        case 'language-unavailable':
+                            errorMessage = 'Ngôn ngữ Tiếng Việt không khả dụng cho giọng nói.';
+                            break;
+                        case 'text-too-long':
+                            errorMessage = 'Văn bản quá dài để phát âm. Vui lòng thử một đoạn ngắn hơn.';
+                            break;
+                        default:
+                            errorMessage = `Lỗi phát âm: ${event.error}. Vui lòng thử lại.`;
+                    }
+                    showTempMessage(errorMessage, 'error');
+                    isAppSpeaking = false; // Important: Set internal flag to false on error too
+                    stop(true); // Stop everything on error
+                };
+
+                currentPoemUtterances.push(utterance);
+            });
         }
 
-        // --- CÁC HÀM ĐIỀU KHIỂN PHÁT ---
+        /**
+         * Bắt đầu phát bài thơ từ đầu hoặc tiếp tục từ vị trí hiện tại.
+         */
         function play() {
-            if (!currentUtterance) return;
-            speechSynthesis.speak(currentUtterance);
+            if (currentPoemUtterances.length === 0) {
+                showTempMessage('Chưa có bài thơ nào được chọn để phát.', 'error');
+                return;
+            }
+            if (speechSynthesis.paused) {
+                resume();
+                return;
+            }
+            // If already speaking or intending to speak, do nothing (don't re-queue)
+            // Check isAppSpeaking first as it reflects our intent more accurately than raw speechSynthesis states immediately after a cancel()
+            if (isAppSpeaking || speechSynthesis.speaking || speechSynthesis.pending) {
+                return;
+            }
+
+            // Start new speech sequence
+            isAppSpeaking = true; // Set internal flag to true
+            currentLineIndex = 0; // Always start from the beginning for a new play call
+            if (currentPoemUtterances[currentLineIndex]) {
+                speechSynthesis.speak(currentPoemUtterances[currentLineIndex]);
+            } else {
+                showTempMessage('Không có nội dung để phát ở vị trí hiện tại.', 'error');
+                isAppSpeaking = false; // Reset if nothing to play
+            }
         }
-        
+
         function pause() {
             speechSynthesis.pause();
             isPlaying = false;
             if (playPauseBtn) playPauseBtn.textContent = '▶️';
             if (progressInterval) clearInterval(progressInterval);
         }
-        
+
         function resume() {
             speechSynthesis.resume();
             isPlaying = true;
             if (playPauseBtn) playPauseBtn.textContent = '⏸️';
         }
-        
+
         function stop(cancelSpeech = true) {
-            if(cancelSpeech) speechSynthesis.cancel();
+            if (cancelSpeech) {
+                speechSynthesis.cancel();
+            }
+            isAppSpeaking = false; // Set internal flag to false
             isPlaying = false;
             if (playPauseBtn) playPauseBtn.textContent = '▶️';
             if (progressInterval) clearInterval(progressInterval);
             if (progressBar) progressBar.style.width = '0%';
+            removeHighlight(-1); // Clear all highlights
+            currentLineIndex = -1; // Reset line index
+            // Clear the queue completely on stop(true)
+            if(cancelSpeech) {
+                currentPoemUtterances = []; // Ensure queue is cleared
+            }
         }
-        
+
+        // Modify playNext and playPrevious to ensure currentLineIndex is handled correctly
         function playRandom() {
+            stop(true); // Stop current speech fully
             if (originalData.length === 0) return;
             let nextIndex;
             if (originalData.length > 1) {
@@ -1117,6 +1403,7 @@
         }
         
         function playNext() {
+            stop(true); // Stop current speech fully
             if (originalData.length === 0) return;
             let nextIdx = (currentIndex + 1) % originalData.length;
             const nextPoem = originalData[nextIdx];
@@ -1124,80 +1411,12 @@
         }
         
         function playPrevious() {
+            stop(true); // Stop current speech fully
             if (originalData.length === 0) return;
             let prevIdx = (currentIndex - 1 + originalData.length) % originalData.length;
             const prevPoem = originalData[prevIdx];
             openPoem(prevIdx, prevPoem["Tiêu đề"], prevPoem["Nội dung"]);
         }
-
-        /**
-         * Đánh dấu liên kết đang hoạt động trong TOC.
-         * @param {number} indexToHighlight - Chỉ mục của bài thơ cần đánh dấu trong originalData.
-         */
-        function highlightTOC(indexToHighlight) {
-            const tocLinks = document.querySelectorAll(".toc a");
-            tocLinks.forEach(link => {
-                if (link.dataset.originalIndex) { // SỬA LỖI: Luôn kiểm tra dataset
-                    const linkIndex = parseInt(link.dataset.originalIndex, 10);
-                    link.classList.toggle("active", linkIndex === indexToHighlight);
-                }
-            });
-        }
-
-        /**
-         * Hiển thị các gợi ý tìm kiếm.
-         * @param {Array} fuseResults - Kết quả từ Fuse.js.
-         */
-        function displaySuggestions(fuseResults) {
-            if (!searchSuggestions) return; // SỬA LỖI: Thêm kiểm tra null
-            searchSuggestions.innerHTML = '';
-            if (fuseResults.length === 0 || searchInput.value.trim() === "") {
-                searchSuggestions.style.display = 'none';
-                return;
-            }
-            fuseResults.slice(0, 5).forEach(({ item }) => {
-                const li = document.createElement('li');
-                li.textContent = item["Tiêu đề"];
-                li.onmousedown = () => {
-                    searchInput.value = item["Tiêu đề"];
-                    searchSuggestions.style.display = 'none';
-                    handleSearch();
-                };
-                searchSuggestions.appendChild(li);
-            });
-            searchSuggestions.style.display = 'block';
-        }
-
-        /**
-         * Hàm trợ giúp để hiển thị thông báo tạm thời trên màn hình.
-         * @param {string} message - Nội dung thông báo.
-         * @param {string} type - Loại thông báo ('success' hoặc 'error').
-         */
-        function showTempMessage(message, type = 'error') {
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = message;
-            messageDiv.style.cssText = `
-                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                padding: 15px 25px; border-radius: 8px; z-index: 2001; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                animation: fadeOut 5s forwards; /* Thêm hiệu ứng fade out */
-                font-family: 'Inter', sans-serif; /* Đảm bảo font chữ nhất quán */
-            `;
-            if (type === 'error') {
-                messageDiv.style.background = '#f44336'; /* Màu nền đỏ cho lỗi */
-                messageDiv.style.color = 'white';
-            } else {
-                messageDiv.style.background = '#4CAF50'; /* Màu nền xanh lá cho thành công */
-                messageDiv.style.color = 'white';
-            }
-            document.body.appendChild(messageDiv);
-
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.parentNode.removeChild(messageDiv);
-                }
-            }, 5000); // Ẩn sau 5 giây (bao gồm thời gian animate)
-        }
-
 
         /**
          * Thực hiện tìm kiếm và hiển thị kết quả.
@@ -1219,30 +1438,6 @@
             }
         }
 
-        // === THÊM MỚI: Hàm sao chép và quản lý Modal ===
-        function copyToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.top = 0;
-            textArea.style.left = 0;
-            textArea.style.opacity = 0;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                if (shareModalOverlay) shareModalOverlay.style.display = 'flex';
-            } catch (err) {
-                console.error('Không thể sao chép văn bản: ', err);
-                showTempMessage('Rất tiếc, không thể sao chép văn bản.', 'error');
-            }
-            document.body.removeChild(textArea);
-        }
-        function closeModal() {
-            if (shareModalOverlay) shareModalOverlay.style.display = 'none';
-        }
-        
         // --- BỘ LẮNG NGHE SỰ KIỆN ---
         if(playPauseBtn) playPauseBtn.addEventListener('click', () => {
             if(speechSynthesis.speaking) {
@@ -1251,9 +1446,10 @@
                 } else {
                     resume();
                 }
-            } else if (currentUtterance) {
+            } else if (currentPoemUtterances.length > 0) { // Check if there's a poem ready to speak
                 play();
             } else if (currentIndex !== -1) {
+                // If a poem is selected but not yet prepared
                 const poem = originalData[currentIndex];
                 openPoem(currentIndex, poem["Tiêu đề"], poem["Nội dung"]);
             }
@@ -1269,26 +1465,18 @@
 
         if(volumeSlider) volumeSlider.addEventListener('input', (e) => {
             if(volumeValue) volumeValue.textContent = Math.round(parseFloat(e.target.value) * 10);
-            if (currentIndex !== -1) {
-                const wasSpeaking = speechSynthesis.speaking;
-                const poem = originalData[currentIndex];
-                preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
-                if (wasSpeaking) {
-                    play();
-                }
-            }
+            // Apply volume to all current utterances if any
+            currentPoemUtterances.forEach(utterance => {
+                utterance.volume = parseFloat(e.target.value);
+            });
         });
 
         if(rateSlider) rateSlider.addEventListener('input', (e) => {
             if(rateValue) rateValue.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
-            if (currentIndex !== -1) {
-                const wasSpeaking = speechSynthesis.speaking;
-                const poem = originalData[currentIndex];
-                preparePlayback(poem["Tiêu đề"], poem["Nội dung"]);
-                if (wasSpeaking) {
-                    play();
-                }
-            }
+            // Apply rate to all current utterances if any
+            currentPoemUtterances.forEach(utterance => {
+                utterance.rate = parseFloat(e.target.value);
+            });
         });
 
         if(searchInput) {
@@ -1376,7 +1564,7 @@
             };
 
             recognition.onerror = (event) => {
-                console.error('Lỗi nhận dạng giọng nói:', event.error);
+                console.error('Lỗi nhận dạng giọng nói:', event.error, event);
                 voiceSearchBtn.title = 'Tìm kiếm bằng giọng nói'; // Khôi phục tiêu đề
                 if (voiceSearchIcon) voiceSearchIcon.textContent = '🎙️'; // Khôi phục icon
                 voiceSearchBtn.classList.remove('listening'); // Xóa class lắng nghe
