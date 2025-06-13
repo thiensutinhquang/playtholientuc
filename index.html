@@ -198,6 +198,7 @@
       justify-content: center;
       align-items: center;
       font-size: 1.8rem; /* CẬP NHẬT: Tăng kích thước icon */
+      position: relative; /* Để chứa listening-indicator */
     }
     #voice-search-btn:hover {
       color: var(--accent-color);
@@ -209,6 +210,39 @@
         inset 3px 3px 6px #0076b8,
         inset -3px -3px 6px #00daff,
         0 0 15px var(--accent-color);
+    }
+
+    /* === THÊM MỚI: Chỉ báo lắng nghe (pulsing dots) === */
+    #listening-indicator {
+        position: absolute;
+        bottom: 5px; /* Điều chỉnh vị trí */
+        right: 5px; /* Điều chỉnh vị trí */
+        display: none; /* Ẩn mặc định */
+        width: 15px; /* Kích thước tổng thể của chỉ báo */
+        height: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #listening-indicator .dot {
+        width: 4px;
+        height: 4px;
+        background-color: var(--text-color-primary); /* Màu trắng xám cho chấm */
+        border-radius: 50%;
+        opacity: 0;
+        animation: pulse 1.4s infinite ease-in-out both;
+    }
+    #listening-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+    #listening-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+    #listening-indicator .dot:nth-child(3) { animation-delay: 0s; }
+
+    @keyframes pulse {
+        0%, 80%, 100% { transform: scale(0); opacity: 0; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+    /* Ẩn/hiện chỉ báo dựa trên class .listening */
+    #voice-search-btn.listening #listening-indicator {
+        display: flex;
     }
     
     #search-suggestions {
@@ -666,6 +700,10 @@
       <h1>📜 Tuyển tập Thơ Nghe</h1>
       <div class="header-nav">
         <a href="https://sites.google.com/view/thiensutinhquang" target="_blank" class="nav-button">Trang chủ</a>
+        <!-- Nút "nghe nhạc" mới -->
+        <a href="https://thiensutinhquang.github.io/PlayMusic/" target="_blank" class="nav-button">Nghe nhạc</a>
+        <!-- Nút "xem video" mới -->
+        <a href="https://thiensutinhquang.github.io/Playlist-YouTube/" target="_blank" class="nav-button">Xem video</a>
         <div class="dropdown">
           <button class="dropdown-toggle">Mạng xã hội</button>
           <div class="dropdown-menu">
@@ -680,7 +718,14 @@
     
     <div id="search-wrapper">
         <input type="text" id="search" placeholder="Tìm kiếm theo tiêu đề hoặc nội dung..." autocomplete="off"/>
-        <button id="voice-search-btn" title="Tìm kiếm bằng giọng nói">🎙️</button>
+        <button id="voice-search-btn" title="Tìm kiếm bằng giọng nói">
+            🎙️
+            <div id="listening-indicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </button>
     </div>
     <p id="search-result-count"></p>
     <div class="toc" id="toc">Đang tải dữ liệu...</div>
@@ -748,6 +793,7 @@
         // --- THAM CHIẾU ĐẾN CÁC PHẦN TỬ DOM ---
         const searchInput = document.getElementById("search");
         const voiceSearchBtn = document.getElementById("voice-search-btn");
+        const listeningIndicator = document.getElementById("listening-indicator"); // THÊM MỚI
         const searchSuggestions = document.getElementById("search-suggestions");
         const searchResultCountElement = document.getElementById("search-result-count");
         const tocContainer = document.getElementById("toc");
@@ -1151,7 +1197,18 @@
                 if (shareModalOverlay) shareModalOverlay.style.display = 'flex';
             } catch (err) {
                 console.error('Không thể sao chép văn bản: ', err);
-                alert('Rất tiếc, không thể sao chép văn bản.');
+                // Sử dụng div thay vì alert
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = 'Rất tiếc, không thể sao chép văn bản.';
+                errorDiv.style.cssText = `
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: #f44336; color: white; padding: 15px 25px; border-radius: 8px;
+                    z-index: 2001; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                `;
+                document.body.appendChild(errorDiv);
+                setTimeout(() => {
+                    document.body.removeChild(errorDiv);
+                }, 3000); // Ẩn sau 3 giây
             }
             document.body.removeChild(textArea);
         }
@@ -1225,42 +1282,93 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition && voiceSearchBtn) {
             const recognition = new SpeechRecognition();
-            recognition.continuous = false;
+            recognition.continuous = false; // Nhận dạng liên tục sẽ được xử lý bằng interimResults
             recognition.lang = 'vi-VN';
-            recognition.interimResults = false;
+            recognition.interimResults = true; // Bật kết quả tạm thời
             recognition.maxAlternatives = 1;
             voiceSearchBtn.style.display = 'flex';
 
             voiceSearchBtn.addEventListener('click', () => {
                 if (isPlaying || speechSynthesis.speaking) {
-                    stop();
+                    stop(); // Dừng đọc nếu đang đọc
                 }
+                if (searchInput) searchInput.value = ''; // Xóa ô tìm kiếm trước khi bắt đầu
                 try {
                     recognition.start();
                 } catch(e) {
                     console.error("Lỗi khi bắt đầu nhận dạng giọng nói:", e);
+                    // Hiển thị thông báo lỗi thân thiện thay vì alert
+                    const errorDiv = document.createElement('div');
+                    errorDiv.textContent = 'Lỗi! Không thể bắt đầu nhận dạng giọng nói. Vui lòng thử lại hoặc kiểm tra micro.';
+                    errorDiv.style.cssText = `
+                        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background: #f44336; color: white; padding: 15px 25px; border-radius: 8px;
+                        z-index: 2001; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    `;
+                    document.body.appendChild(errorDiv);
+                    setTimeout(() => {
+                        document.body.removeChild(errorDiv);
+                    }, 5000); // Ẩn sau 5 giây
                 }
             });
 
             recognition.onstart = () => {
                 voiceSearchBtn.classList.add('listening');
                 voiceSearchBtn.title = 'Đang lắng nghe...';
+                if (navigator.vibrate) { // Kích hoạt rung nếu được hỗ trợ
+                    navigator.vibrate(200); // Rung 200ms
+                }
+                if (listeningIndicator) listeningIndicator.style.display = 'flex'; // HIỂN THỊ CHỈ BÁO
             };
 
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                if(searchInput) searchInput.value = transcript;
-                handleSearch();
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                if (searchInput) {
+                    // Cập nhật ô tìm kiếm với kết quả cuối cùng hoặc tạm thời
+                    searchInput.value = finalTranscript || interimTranscript; 
+                }
+                if (finalTranscript) {
+                    handleSearch(); // Thực hiện tìm kiếm chỉ khi có kết quả cuối cùng
+                }
             };
 
             recognition.onerror = (event) => {
                 console.error('Lỗi nhận dạng giọng nói:', event.error);
                 voiceSearchBtn.title = 'Lỗi! Thử lại?';
+                if (navigator.vibrate) { // Dừng rung nếu có lỗi
+                    navigator.vibrate(0);
+                }
+                if (listeningIndicator) listeningIndicator.style.display = 'none'; // ẨN CHỈ BÁO KHI CÓ LỖI
+                 // Hiển thị thông báo lỗi thân thiện thay vì alert
+                 const errorDiv = document.createElement('div');
+                 errorDiv.textContent = `Lỗi nhận dạng giọng nói: ${event.error}. Vui lòng thử lại.`;
+                 errorDiv.style.cssText = `
+                     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                     background: #f44336; color: white; padding: 15px 25px; border-radius: 8px;
+                     z-index: 2001; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                 `;
+                 document.body.appendChild(errorDiv);
+                 setTimeout(() => {
+                     document.body.removeChild(errorDiv);
+                 }, 5000); // Ẩn sau 5 giây
             };
 
             recognition.onend = () => {
                 voiceSearchBtn.classList.remove('listening');
                 voiceSearchBtn.title = 'Tìm kiếm bằng giọng nói';
+                if (navigator.vibrate) { // Dừng rung khi kết thúc nhận dạng
+                    navigator.vibrate(0);
+                }
+                if (listeningIndicator) listeningIndicator.style.display = 'none'; // ẨN CHỈ BÁO KHI KẾT THÚC
             };
         } else {
             if (voiceSearchBtn) {
