@@ -758,9 +758,6 @@
       color: var(--text-color-secondary);
       cursor: pointer;
       transition: all 0.2s ease-in-out;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       box-shadow: 
         5px 5px 10px var(--shadow-dark),
         -5px -5px 10px var(--shadow-light);
@@ -1075,6 +1072,50 @@
         // === THÊM MỚI: Tham chiếu Modal ===
         const shareModalOverlay = document.getElementById("share-modal-overlay");
         const shareModalCloseBtn = document.getElementById("share-modal-close-btn");
+
+
+        // --- WAKE LOCK IMPLEMENTATION (Added from user provided code) ---
+        let wakeLock = null;
+        // isAppSpeaking already acts as the `isReading` flag from the user's snippet
+        
+        /**
+         * Yêu cầu giữ màn hình sáng.
+         */
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("✅ Wake Lock được kích hoạt");
+                } catch (err) {
+                    // CẬP NHẬT: Ghi log lỗi cụ thể hơn vào console
+                    console.error("🚫 Wake Lock thất bại:", err.message); 
+                    showTempMessage("🚫 Không thể giữ màn hình sáng. Vui lòng cho phép quyền hoặc dùng trình duyệt khác.", "error");
+                }
+            } else {
+                showTempMessage("🔋 Trình duyệt của bạn không hỗ trợ giữ màn hình sáng. Vui lòng chỉnh trong cài đặt hoặc dùng Chrome.", "error");
+            }
+        }
+
+        /**
+         * Giải phóng giữ màn hình sáng.
+         */
+        async function releaseWakeLock() {
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+                console.log("🔓 Wake Lock đã được giải phóng");
+            }
+        }
+
+        // Gọi lại khi quay về tab và đang đọc
+        document.addEventListener('visibilitychange', async () => {
+            // isAppSpeaking is our internal flag for active playback
+            if (document.visibilityState === 'visible' && isAppSpeaking) {
+                await requestWakeLock();
+            }
+        });
+        // --- END WAKE LOCK IMPLEMENTATION ---
+
 
         /**
          * Hàm trợ giúp để loại bỏ dấu tiếng Việt và chuyển về chữ thường.
@@ -1488,6 +1529,7 @@
                     isPlaying = true;
                     if (playPauseBtn) playPauseBtn.textContent = '⏸️';
                     highlightCurrentLine(idx); // Highlight the current line
+                    requestWakeLock(); // Request wake lock when a line starts speaking
                     
                     // Re-estimate progress based on character count of current line
                     // Use the original text length for estimation
@@ -1514,10 +1556,13 @@
                         // If there are more lines, speak the next one
                         if (isAppSpeaking && !speechSynthesis.paused) { // Only speak next if our app *intends* to be speaking AND not paused
                             speechSynthesis.speak(currentPoemUtterances[currentLineIndex]);
+                        } else {
+                            releaseWakeLock(); // Release if paused before next line
                         }
                     } else {
                         // All lines spoken for the current poem
                         isAppSpeaking = false; // Our internal flag
+                        releaseWakeLock(); // Release wake lock when all lines are spoken
                         if (progressInterval) clearInterval(progressInterval);
                         if (progressBar) progressBar.style.width = '100%'; // Full progress for poem
                         if (autoPlay) {
@@ -1589,18 +1634,21 @@
 
             // Start new speech sequence
             isAppSpeaking = true; // Set internal flag to true
+            requestWakeLock(); // Request wake lock when playback starts
             currentLineIndex = 0; // Always start from the beginning for a new play call
             if (currentPoemUtterances[currentLineIndex]) {
                 speechSynthesis.speak(currentPoemUtterances[currentLineIndex]);
             } else {
                 showTempMessage('Không có nội dung để phát ở vị trí hiện tại.', 'error');
                 isAppSpeaking = false; // Reset if nothing to play
+                releaseWakeLock(); // Release if nothing to play
             }
         }
 
         function pause() {
             speechSynthesis.pause();
             isPlaying = false;
+            releaseWakeLock(); // Release wake lock when paused
             if (playPauseBtn) playPauseBtn.textContent = '▶️';
             if (progressInterval) clearInterval(progressInterval);
         }
@@ -1608,6 +1656,7 @@
         function resume() {
             speechSynthesis.resume();
             isPlaying = true;
+            requestWakeLock(); // Request wake lock again when resumed
             if (playPauseBtn) playPauseBtn.textContent = '⏸️';
         }
 
@@ -1616,6 +1665,7 @@
                 speechSynthesis.cancel();
             }
             isAppSpeaking = false; // Set internal flag to false
+            releaseWakeLock(); // Release wake lock when playback stops or is cancelled
             isPlaying = false;
             if (playPauseBtn) playPauseBtn.textContent = '▶️';
             if (progressInterval) clearInterval(progressInterval);
