@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Đang chuyển hướng...</title>
-  <!-- Tối ưu tốc độ tải -->
   <link rel="dns-prefetch" href="//thiensutinhquang.github.io">
   <link rel="preconnect" href="https://thiensutinhquang.github.io">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -25,43 +24,46 @@
 
   <script>
   (function(){
-    // URL đích. Đây là một Universal Link (iOS) và App Link (Android)
-    const targetURL    = 'https://thiensutinhquang.github.io/playtholientuc/';
+    // === PHẦN QUAN TRỌNG: XỬ LÝ LINK ĐÍCH ===
+    // 1. Đặt địa chỉ gốc của ứng dụng PWA của bạn ở đây
+    const baseAppURL = 'https://thiensutinhquang.github.io/Playlist-YouTube/';
     
-    // --- BƯỚC 1: PHÁT HIỆN TRÌNH DUYỆT TRONG ỨNG DỤNG ---
+    // 2. Lấy tham số từ URL hiện tại (ví dụ: ?v=VIDEO_ID&t=123)
+    const params = new URLSearchParams(window.location.search);
+    const videoId = params.get('v');
+    const videoTime = params.get('t');
+
+    // 3. Tạo URL đích cuối cùng
+    let targetURL = baseAppURL;
+    if (videoId) {
+      targetURL += `?v=${videoId}`;
+      if (videoTime) {
+        targetURL += `&t=${videoTime}`;
+      }
+    }
+    
+    // === PHẦN PHÁT HIỆN VÀ CHUYỂN HƯỚNG (giữ nguyên) ===
     const ua           = navigator.userAgent || '';
     const isAndroid    = /Android/i.test(ua);
     const isIOS        = /iPhone|iPad|iPod/i.test(ua);
     const inAppKeywords = ['FBAV', 'FBAN', 'Zalo', 'Messenger', 'Telegram', 'Viber'];
     const isInApp       = inAppKeywords.some(keyword => ua.includes(keyword));
 
-    // Nếu người dùng đã ở trình duyệt chuẩn, App Link/Universal Link sẽ tự được kích hoạt.
-    // Chúng ta chuyển thẳng đến trang đích.
     if (!isInApp) {
       window.location.replace(targetURL);
       return;
     }
-
-    // --- BƯỚC 2: LOGIC THOÁT KHỎI TRÌNH DUYỆT TRONG ỨNG DỤNG KHI CLICK NÚT ---
-    // Mục tiêu là đưa targetURL ra trình duyệt mặc định của hệ thống.
-    // Tại đó, iOS/Android sẽ tự xử lý App Link/Universal Link.
-
-    // Hàm cho Android: Sử dụng Intent để yêu cầu mở URL trong trình duyệt cụ thể.
+    
     function tryOpenInAndroid(packages) {
       let i = 0;
       const attemptNext = () => {
         if (i >= packages.length) {
-          // Nếu không có trình duyệt nào, đưa tới Play Store để cài Chrome.
           window.location.href = 'https://play.google.com/store/apps/details?id=com.android.chrome';
           return;
         }
-        
         const pkg = packages[i++];
-        const url = new URL(targetURL);
-        // Intent này yêu cầu mở URL trong một package cụ thể (trình duyệt).
-        // Khi đã ra ngoài trình duyệt đó, Android sẽ nhận diện App Link và mở ứng dụng nếu có.
-        const intent = `intent://${url.host}${url.pathname}${url.search}` +
-                       `#Intent;scheme=${url.protocol.replace(':','')};` +
+        const intent = `intent:${targetURL.replace(/^https?:\/\//, '')}` +
+                       `#Intent;scheme=https;` +
                        `package=${pkg};` +
                        `S.browser_fallback_url=${encodeURIComponent(targetURL)};end`;
         window.location.href = intent;
@@ -70,18 +72,14 @@
       attemptNext();
     }
 
-    // Hàm cho iOS: Sử dụng URL Scheme của các trình duyệt để mở URL.
     function tryOpenInIOS(schemes, appStoreLink) {
       let i = 0;
       const attemptNext = () => {
         if (i >= schemes.length) {
-          // Nếu không có, đưa tới App Store để cài Chrome.
           window.location.href = appStoreLink;
           return;
         }
         const scheme = schemes[i++];
-        // Thay thế https:// bằng scheme của trình duyệt, ví dụ: googlechrome://
-        // Khi Chrome mở link, iOS sẽ nhận diện Universal Link và mở ứng dụng.
         const url = targetURL.replace(/^https?:\/\//, scheme + '://');
         window.location.href = url;
         setTimeout(attemptNext, 1200);
@@ -89,24 +87,15 @@
       attemptNext();
     }
 
-    // Gắn sự kiện 'click' cho nút
     document.getElementById('openExternalBrowser').addEventListener('click', () => {
-      // Thứ tự ưu tiên: Chrome -> Firefox -> Cốc Cốc -> Brave -> Edge
-      const androidPackages = [
-        'com.android.chrome', 'org.mozilla.firefox', 'com.coccoc.browser', 
-        'com.brave.browser', 'com.microsoft.emmx'
-      ];
-      const iosSchemes = [
-        'googlechromes', 'googlechrome', 'firefox', 'brave', 'microsoft-edge'
-      ];
+      const androidPackages = ['com.android.chrome', 'org.mozilla.firefox', 'com.coccoc.browser', 'com.brave.browser', 'com.microsoft.emmx'];
+      const iosSchemes = ['googlechromes', 'googlechrome', 'firefox', 'brave', 'microsoft-edge'];
 
       if (isAndroid) {
         tryOpenInAndroid(androidPackages);
       } else if (isIOS) {
-        // Link App Store của Chrome làm phương án dự phòng
         tryOpenInIOS(iosSchemes, 'itms-apps://itunes.apple.com/app/id535886823');
       } else {
-        // Fallback cho desktop
         window.open(targetURL, '_blank');
       }
     });
