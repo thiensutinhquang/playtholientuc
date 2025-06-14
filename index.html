@@ -540,7 +540,7 @@
       transition: all 0.2s ease-in-out;
       background: var(--element-bg);
       box-shadow:
-        3px 3px 6px var(--shadow-dark), /* Giảm nhẹ bóng đổ */
+        3px 3px 6px var(--shadow-dark),
         -3px -3px 6px var(--shadow-light);
     }
     .toc a:hover {
@@ -777,7 +777,7 @@
     .player-row-2 button:active {
       color: var(--accent-color);
       box-shadow: 
-        inset 4px 44px 8px var(--shadow-dark),
+        inset 4px 4px 8px var(--shadow-dark),
         inset -4px -4px 8px var(--shadow-light);
     }
     .player-row-2 button.active-auto {
@@ -1074,10 +1074,11 @@
         const shareModalCloseBtn = document.getElementById("share-modal-close-btn");
 
 
-        // --- WAKE LOCK IMPLEMENTATION (Added from user provided code) ---
+        // --- WAKE LOCK IMPLEMENTATION ---
         let wakeLock = null;
-        // isAppSpeaking already acts as the `isReading` flag from the user's snippet
-        
+        let wakeLockAttempted = false; // Flag to track if we tried to get wake lock
+        let scrollIntervalId = null; // For fallback mechanism
+
         /**
          * Yêu cầu giữ màn hình sáng.
          */
@@ -1086,13 +1087,24 @@
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
                     console.log("✅ Wake Lock được kích hoạt");
+                    wakeLockAttempted = true; // Successfully acquired or requested
+                    stopScrollFallback(); // Stop fallback if Wake Lock is now active
                 } catch (err) {
-                    // CẬP NHẬT: Ghi log lỗi cụ thể hơn vào console
+                    // Log the specific error message to console
                     console.error("🚫 Wake Lock thất bại:", err.message); 
-                    showTempMessage("🚫 Không thể giữ màn hình sáng. Vui lòng cho phép quyền hoặc dùng trình duyệt khác.", "error");
+                    wakeLock = null; // Ensure wakeLock is null on failure
+                    wakeLockAttempted = false; // Failed to acquire wake lock
+                    // CẬP NHẬT THÔNG BÁO LỖI
+                    showTempMessage("Trình duyệt này của bạn hiện không thể nghe đọc thơ liên tục. Nếu bạn muốn dùng nghe và đọc liên tục được tốt nhất Vui lòng cho phép quyền hoặc dùng trình duyệt Chrome. Có thể liên hệ với Tịnh Hải để biết thêm.", "error");
+                    // Immediately start scroll fallback if Wake Lock fails
+                    startScrollFallback(); 
                 }
             } else {
-                showTempMessage("🔋 Trình duyệt của bạn không hỗ trợ giữ màn hình sáng. Vui lòng chỉnh trong cài đặt hoặc dùng Chrome.", "error");
+                wakeLockAttempted = false; // Wake Lock API not supported
+                // CẬP NHẬT THÔNG BÁO LỖI
+                showTempMessage("Trình duyệt này của bạn hiện không thể nghe đọc thơ liên tục. Nếu bạn muốn dùng nghe và đọc liên tục được tốt nhất Vui lòng cho phép quyền hoặc dùng trình duyệt Chrome. Có thể liên hệ với Tịnh Hải để biết thêm.", "error");
+                // Immediately start scroll fallback if Wake Lock not supported
+                startScrollFallback();
             }
         }
 
@@ -1105,13 +1117,46 @@
                 wakeLock = null;
                 console.log("🔓 Wake Lock đã được giải phóng");
             }
+            stopScrollFallback(); // Always stop scroll fallback when releasing wake lock
+        }
+
+        /**
+         * Bắt đầu cơ chế cuộn dự phòng nếu Wake Lock không khả dụng.
+         */
+        function startScrollFallback() {
+            // Only start if Wake Lock failed or not supported AND fallback isn't already running
+            if (!wakeLockAttempted && scrollIntervalId === null) {
+                console.log("🔄 Bắt đầu cuộn dự phòng để giữ màn hình sáng.");
+                let scrollDirection = 1; // 1 for down, -1 for up
+                scrollIntervalId = setInterval(() => {
+                    window.scrollBy(0, scrollDirection);
+                    // Reverse direction to keep scroll within bounds and less noticeable
+                    scrollDirection *= -1; 
+                }, 30000); // Scroll every 30 seconds
+            }
+        }
+
+        /**
+         * Dừng cơ chế cuộn dự phòng.
+         */
+        function stopScrollFallback() {
+            if (scrollIntervalId !== null) {
+                clearInterval(scrollIntervalId);
+                scrollIntervalId = null;
+                console.log("🛑 Đã dừng cuộn dự phòng.");
+            }
         }
 
         // Gọi lại khi quay về tab và đang đọc
         document.addEventListener('visibilitychange', async () => {
-            // isAppSpeaking is our internal flag for active playback
-            if (document.visibilityState === 'visible' && isAppSpeaking) {
-                await requestWakeLock();
+            if (document.visibilityState === 'visible') {
+                if (isAppSpeaking) {
+                    await requestWakeLock(); // Try to re-acquire Wake Lock
+                    // If requestWakeLock fails, it will automatically start scroll fallback
+                }
+            } else {
+                // If visibility changes to hidden, release wake lock immediately
+                releaseWakeLock();
             }
         });
         // --- END WAKE LOCK IMPLEMENTATION ---
